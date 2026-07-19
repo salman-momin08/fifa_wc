@@ -37,11 +37,11 @@ def sanitize_user_input(text: str) -> str:
             text = "[System Censor: Potential Prompt Injection Attempt Blocked]"
             break
 
-    # 2. Redact PII
+    # 2. Redact PII (specific formats first)
+    text = TICKET_RE.sub("[REDACTED TICKET]", text)
+    text = CREDIT_CARD_RE.sub("[REDACTED CARD]", text)
     text = EMAIL_RE.sub("[REDACTED EMAIL]", text)
     text = PHONE_RE.sub("[REDACTED PHONE]", text)
-    text = CREDIT_CARD_RE.sub("[REDACTED CARD]", text)
-    text = TICKET_RE.sub("[REDACTED TICKET]", text)
 
     return text
 

@@ -20,16 +20,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain-text password against a hashed password string.
+    """Verify plain-text password against a hashed bcrypt digest.
 
     Args:
-        plain_password: Candidate plain password.
-        hashed_password: Stored bcrypt hash string.
+        plain_password: User-provided input password.
+        hashed_password: Stored bcrypt hashed string.
 
     Returns:
         True if password matches hash, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    safe_pwd = plain_password[:72] if plain_password else ""
+    return pwd_context.verify(safe_pwd, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
@@ -41,7 +42,8 @@ def get_password_hash(password: str) -> str:
     Returns:
         Bcrypt hashed string representation.
     """
-    return pwd_context.hash(password)
+    safe_pwd = password[:72] if password else ""
+    return pwd_context.hash(safe_pwd)
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:

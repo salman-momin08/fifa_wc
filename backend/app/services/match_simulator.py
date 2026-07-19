@@ -39,14 +39,17 @@ class MatchSimulator:
         current_time = time.time()
 
         # Dynamic match minute (0 to 90+ minutes cycling smoothly over real time)
-        elapsed_mins = int((current_time % MATCH_CYCLE_SECONDS) / 60)
-        if elapsed_mins == 0:
-            elapsed_mins = 1
-
-        if elapsed_mins > 90:
-            minute_str = f"90+{elapsed_mins - 90}'"
+        if db_match and db_match.match_minute:
+            minute_str = db_match.match_minute
         else:
-            minute_str = f"{elapsed_mins}'"
+            elapsed_mins = int((current_time % MATCH_CYCLE_SECONDS) / 60)
+            if elapsed_mins == 0:
+                elapsed_mins = 1
+
+            if elapsed_mins > 90:
+                minute_str = f"90+{elapsed_mins - 90}'"
+            else:
+                minute_str = f"{elapsed_mins}'"
 
         # Seed pseudo-random generator with interval timestamp so state is synchronized across all clients
         seed = int(current_time / MATCH_SEED_INTERVAL_SECONDS)

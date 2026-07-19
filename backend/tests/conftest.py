@@ -43,7 +43,7 @@ def setup_test_db():
     # Seed default users via init_db (uses the overridden DB)
     db = TestingSessionLocal()
     try:
-        init_db()
+        init_db(db_session=db)
     finally:
         db.close()
     yield

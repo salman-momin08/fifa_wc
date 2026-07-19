@@ -7,7 +7,7 @@ SQLite/PostgreSQL database connections and handles initial seed data.
 """
 import datetime
 import os
-from typing import Generator
+from typing import Generator, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -139,11 +139,12 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def init_db() -> None:
+def init_db(db_session: Optional[Session] = None) -> None:
     """Create all ORM database tables and populate default seed records if empty."""
     Base.metadata.create_all(bind=engine)
 
-    db = SessionLocal()
+    db = db_session if db_session is not None else SessionLocal()
+    should_close = db_session is None
     try:
         # Seed default users
         if db.query(User).count() == 0:
@@ -204,4 +205,5 @@ def init_db() -> None:
         db.rollback()
         print(f"Failed to seed database: {e}")
     finally:
-        db.close()
+        if should_close:
+            db.close()
