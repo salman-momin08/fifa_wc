@@ -1,16 +1,14 @@
-# Render Blueprint Infrastructure Specification
+# Render Blueprint Infrastructure Specification (100% Free Tier)
 # FIFA World Cup 2026 Stadium Operations & Fan Portal (v2.0)
 #
-# Deploy on Render:
-# 1. Push code to GitHub
-# 2. Go to https://dashboard.render.com -> New -> Blueprint
-# 3. Connect your repository — Render will provision all services automatically!
+# Configured specifically for Render's 100% FREE plan (no payment card required).
 
 services:
-  # ── Backend Service (FastAPI API Core) ───────────────────────────────────────
+  # ── Backend Service (FastAPI Core) ──────────────────────────────────────────
   - type: web
     name: fifa-wc-backend
     env: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -19,24 +17,20 @@ services:
         fromDatabase:
           name: fifa-wc-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: fifa-wc-redis
-          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_ALGORITHM
         value: HS256
       - key: GEMINI_API_KEY
-        sync: false  # Fill in via Render Dashboard
+        sync: false
       - key: ALLOWED_ORIGINS
-        value: https://fifa-wc-frontend.onrender.com
+        value: '*'
 
-  # ── Frontend Service (Next.js Dashboard) ─────────────────────────────────────
+  # ── Frontend Service (Next.js Dashboard) ────────────────────────────────────
   - type: web
     name: fifa-wc-frontend
     env: node
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm run start
@@ -46,32 +40,9 @@ services:
       - key: NEXT_PUBLIC_WS_URL
         value: wss://fifa-wc-backend.onrender.com/ws/updates
 
-  # ── Async Worker Service (Celery Background Tasks) ──────────────────────────
-  - type: worker
-    name: fifa-wc-celery
-    env: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: celery -A app.worker.celery_app worker --loglevel=info
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: fifa-wc-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: fifa-wc-redis
-          property: connectionString
-      - key: GEMINI_API_KEY
-        sync: false
-
-# ── Managed Databases & Caches ────────────────────────────────────────────────
+# ── Managed Free PostgreSQL Database ─────────────────────────────────────────
 databases:
   - name: fifa-wc-postgres
     databaseName: stadium_ops
     user: admin
-    plan: free  # Change to starter or higher for production scale
-
-# ── Redis Key-Value Store ─────────────────────────────────────────────────────
-# Render managed Redis service
+    plan: free
