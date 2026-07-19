@@ -24,60 +24,53 @@ INJECTION_KEYWORDS = [
     "acting as", "forget everything", "developer mode"
 ]
 
+
 def sanitize_user_input(text: str) -> str:
-    """
-    Redact PII from the input query.
-    """
+    """Redact PII from the input query."""
     if not text:
         return ""
-    
+
     # 1. Check for prompt injection
     lower_text = text.lower()
     for kw in INJECTION_KEYWORDS:
         if kw in lower_text:
-            # Neutralize injection by clearing or flagging
             text = "[System Censor: Potential Prompt Injection Attempt Blocked]"
             break
-            
+
     # 2. Redact PII
     text = EMAIL_RE.sub("[REDACTED EMAIL]", text)
     text = PHONE_RE.sub("[REDACTED PHONE]", text)
     text = CREDIT_CARD_RE.sub("[REDACTED CARD]", text)
     text = TICKET_RE.sub("[REDACTED TICKET]", text)
-    
+
     return text
 
+
 def verify_and_correct_locations(db: Session, text: str) -> str:
-    """
-    Scans the generated text for mentions of gates or landmarks.
+    """Scans the generated text for mentions of gates or landmarks.
+
     If a gate/location is mentioned, verifies it exists in the database.
     If it does not exist, marks it or replaces it with a verified one.
     """
-    # Fetch all valid node names from DB
     valid_nodes = [node.name for node in db.query(WayfindingNode).all()]
-    
-    # Find patterns like "Gate X" or "Transit Plaza"
-    # Let's extract any potential locations by matching capital letter words/phrases
+
     potential_locations = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", text)
-    
+
     for loc in potential_locations:
-        # Check if it sounds like a gate or station but isn't in valid_nodes
         if ("Gate" in loc or "Plaza" in loc or "Concourse" in loc or "Stand" in loc):
             if loc not in valid_nodes:
-                # Find closest verified gate (e.g., matching first characters or default Gate A)
                 closest = "Gate A (Verified)"
                 for node_name in valid_nodes:
                     if loc[:4].lower() == node_name[:4].lower():
                         closest = node_name
                         break
                 text = text.replace(loc, f"{closest} (Alternative for non-existent {loc})")
-                
+
     return text
 
+
 def translate_fallback(text: str, lang: str) -> str:
-    """
-    Simple static translation lookup for multilingual support under degraded offline conditions.
-    """
+    """Simple static translation lookup for multilingual support under degraded offline conditions."""
     translations = {
         "es": {
             "High Density": "Densidad Alta",
@@ -100,11 +93,11 @@ def translate_fallback(text: str, lang: str) -> str:
             "proceed to": "proceda a"
         },
         "fr": {
-            "High Density": "Densité Élevée",
+            "High Density": "Haute Densité",
             "Slow entry flow, recommend redirection.": "Flux d'entrée lent, redirection recommandée.",
             "Moderate Density": "Densité Modérée",
             "Flowing smoothly.": "Fluide.",
-            "Low Density": "Densité Faible",
+            "Low Density": "Faible Densité",
             "Entry clear.": "Entrée libre.",
             "Verified": "Vérifié",
             "Emergency Plan Activated": "Plan d'Urgence Activé",
@@ -126,25 +119,25 @@ def translate_fallback(text: str, lang: str) -> str:
             "Flowing smoothly.": "تدفق سلس.",
             "Low Density": "كثافة منخفضة",
             "Entry clear.": "المدخل خالٍ.",
-            "Verified": "تم التحقق",
+            "Verified": "متحقق منه",
             "Emergency Plan Activated": "تم تفعيل خطة الطوارئ",
-            "Transit delay": "تأخر النقل",
+            "Transit delay": "تأخير في النقل",
             "delay": "تأخير",
             "minutes": "دقائق",
             "is currently normal": "يعمل بشكل طبيعي",
             "wheelchair accessible": "متاح للكراسي المتحركة",
-            "restroom nearby": "دورة مياه قريبة",
-            "first aid nearby": "الإسعافات الأولية قريبة",
-            "To go from": "للذهاب من",
+            "restroom nearby": "دورات مياه قريبة",
+            "first aid nearby": "إسعافات أولية قريبة",
+            "To go from": "للإنتقال من",
             "to": "إلى",
-            "proceed to": "اتجه نحو"
+            "proceed to": "توجه إلى"
         },
         "pt": {
-            "High Density": "Densidade Alta",
+            "High Density": "Alta Densidade",
             "Slow entry flow, recommend redirection.": "Fluxo de entrada lento, recomenda-se redirecionamento.",
             "Moderate Density": "Densidade Moderada",
-            "Flowing smoothly.": "Fluindo suavemente.",
-            "Low Density": "Densidade Baixa",
+            "Flowing smoothly.": "Fluindo normalmente.",
+            "Low Density": "Baixa Densidade",
             "Entry clear.": "Entrada livre.",
             "Verified": "Verificado",
             "Emergency Plan Activated": "Plano de Emergência Ativado",
@@ -160,8 +153,7 @@ def translate_fallback(text: str, lang: str) -> str:
             "proceed to": "siga para"
         }
     }
-    
-    # Apply replacements if language is supported
+
     target = lang.lower()
     if target in translations:
         dict_trans = translations[target]
@@ -169,27 +161,26 @@ def translate_fallback(text: str, lang: str) -> str:
         for en_word, trans_word in dict_trans.items():
             translated_text = re.sub(r'\b' + re.escape(en_word) + r'\b', trans_word, translated_text, flags=re.IGNORECASE)
         return translated_text
-        
+
     return text
 
+
 async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang: str = "en") -> str:
-    """
-    Main LLM prompt runner.
+    """Main LLM prompt runner.
+
     If GEMINI_API_KEY is available, executes via Gemini API.
     Otherwise, falls back to a rules-based deterministic generation based on SQL data.
     """
     sanitized_user = sanitize_user_input(user_prompt)
-    
-    # Check if there is an injection blockade
+
     if "[System Censor:" in sanitized_user:
         return "I am sorry, but I cannot process this request due to security protocol violations."
 
     gemini_key = os.environ.get("GEMINI_API_KEY")
     result_text = ""
-    
+
     if gemini_key:
         try:
-            # Safe call structure with XML constraints
             xml_user_prompt = f"<system_context>{system_prompt}</system_context>\n<user_query>{sanitized_user}</user_query>"
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
             payload = {
@@ -201,21 +192,16 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                     data = response.json()
                     result_text = data["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
-            # Fallback to local rule evaluation on LLM failure
             print(f"LLM call failed: {e}. Degrading to offline static rules.")
             result_text = ""
-            
-    # Local fallback engine (offline mode)
+
     if not result_text:
-        # Match intents in user_prompt
         query = sanitized_user.lower()
         if "go from" in query or "wayfinding" in query or "route" in query or "how to get" in query:
-            # Wayfinding Intent
             start_node = "Transit Plaza"
             end_node = "Gate A"
             accessible = "wheelchair" in query or "ramp" in query or "elevator" in query
-            
-            # Try to identify start/end in DB
+
             nodes = db.query(WayfindingNode).all()
             for n in nodes:
                 if n.name.lower() in query:
@@ -223,10 +209,10 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                         start_node = n.name
                     elif "to " + n.name.lower() in query:
                         end_node = n.name
-            
+
             start = db.query(WayfindingNode).filter(WayfindingNode.name == start_node).first()
             end = db.query(WayfindingNode).filter(WayfindingNode.name == end_node).first()
-            
+
             if start and end:
                 features = []
                 if accessible:
@@ -237,7 +223,7 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                     features.append("restroom nearby")
                 if end.first_aid_nearby:
                     features.append("first aid nearby")
-                
+
                 feat_str = f" [{', '.join(features)}]" if features else ""
                 result_text = (
                     f"To go from {start.name} (Lat: {start.coordinates_lat}, Lng: {start.coordinates_lng}) "
@@ -246,17 +232,15 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                 )
             else:
                 result_text = "Standard waypoint route: Proceed along the designated concourse ring to your target gate."
-                
+
         elif "crowd" in query or "density" in query or "gate flow" in query:
-            # Crowd Intent
             sensors = db.query(CrowdSensor).all()
             reports = []
             for s in sensors:
                 reports.append(f"{s.zone}: {s.density_percentage}% density. {s.advisory}")
             result_text = "Crowd Density Advisories:\n" + "\n".join(reports)
-            
+
         elif "transit" in query or "bus" in query or "metro" in query or "parking" in query:
-            # Transit Intent
             alerts = db.query(TransitAlert).all()
             reports = []
             for a in alerts:
@@ -265,16 +249,14 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                 else:
                     reports.append(f"{a.route} is currently normal.")
             result_text = "Transit Network Status:\n" + "\n".join(reports)
-            
+
         elif "sustainability" in query or "recycle" in query or "waste" in query:
-            # Sustainability Intent
             result_text = (
                 "Sustainability Nudge: Help us keep the stadium green! Refill your water bottle at "
                 "Concourse West refill station and throw recyclables in the Green Bin near Gate B."
             )
-            
+
         elif "incident" in query or "emergency" in query or "sop" in query:
-            # Emergency SOP Incident Intent
             sops = db.query(SOPRule).all()
             matched = False
             for s in sops:
@@ -284,17 +266,14 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
                     break
             if not matched:
                 result_text = "Standard Operational Incident Protocol: Secure the zone, guide spectators away, and notify volunteer services."
-                
+
         else:
             result_text = (
                 "Welcome to the FIFA World Cup 2026 Stadium Operations Assistant. I can assist with "
                 "accessible wayfinding, crowd flow reports, live transit delays, sustainability tips, and SOP instructions."
             )
-            
-    # Verify and correct any coordinates/gates in output to avoid hallucinations
-    result_text = verify_and_correct_locations(db, result_text)
 
-    # Translate text if necessary
+    result_text = verify_and_correct_locations(db, result_text)
     result_text = translate_fallback(result_text, lang)
 
     return result_text

@@ -187,11 +187,11 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
+}
 
-  h3 {
-    font-size: 1.15rem;
-    color: #fff;
-  }
+.modalHeader h3 {
+  font-size: 1.15rem;
+  color: #fff;
 }
 
 .closeBtn {
@@ -212,26 +212,26 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
 
-  label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-  }
+.formField label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
 
-  input {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid var(--glass-border);
-    color: #fff;
-    padding: 0.65rem 0.85rem;
-    border-radius: 0.5rem;
-    font-size: 0.95rem;
-    outline: none;
+.formField input {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  outline: none;
+}
 
-    &:focus {
-      border-color: var(--color-secondary);
-    }
-  }
+.formField input:focus {
+  border-color: var(--color-secondary);
 }
 
 .submitBtn {
@@ -268,32 +268,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
 
-  span {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    font-weight: 600;
-  }
+.quickLoginSection span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
 .quickButtonsRow {
   display: flex;
   gap: 0.5rem;
+}
 
-  button {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--glass-border);
-    color: #fff;
-    font-size: 0.75rem;
-    padding: 0.4rem 0.5rem;
-    border-radius: 0.4rem;
-    cursor: pointer;
-    transition: var(--transition-smooth);
-  }
+.quickButtonsRow button {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
 
-  button:hover {
-    background: rgba(0, 230, 118, 0.1);
-    border-color: var(--color-primary);
-  }
+.quickButtonsRow button:hover {
+  background: rgba(0, 230, 118, 0.1);
+  border-color: var(--color-primary);
 }

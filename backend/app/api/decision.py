@@ -157,12 +157,12 @@ async def approve_incident(
     incident = repo.get_incident_by_id(req.incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-        
+
     incident.status = "active"
     incident.is_approved = True
     if req.custom_action:
         incident.suggested_action = req.custom_action
-        
+
     repo.update_incident(incident)
 
     # Broadcast incident approval via WebSocket to all connected clients
