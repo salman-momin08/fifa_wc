@@ -40,6 +40,13 @@
   -webkit-text-fill-color: transparent;
 }
 
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 /* Capsule Selector Navigation */
 .selector {
   display: flex;
@@ -78,4 +85,39 @@
 .btn:focus-visible {
   outline: none;
   border-color: var(--color-secondary);
+}
+
+/* RBAC Auth Control */
+.rbacControl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  padding: 0.35rem 0.75rem;
+  border-radius: 2rem;
+}
+
+.rbacLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rbacSelect {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.rbacSelect option {
+  background: #0d1117;
+  color: #fff;
 }
