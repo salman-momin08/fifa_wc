@@ -10,8 +10,7 @@ import os
 from typing import Generator, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # Use DATABASE_URL env var if set (PostgreSQL in Docker/production),
 # otherwise fall back to local SQLite for development without Docker.
@@ -39,7 +38,7 @@ class Incident(Base):
     gate = Column(String, nullable=False)
     suggested_action = Column(String, nullable=True)
     is_approved = Column(Boolean, default=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 class TransitAlert(Base):

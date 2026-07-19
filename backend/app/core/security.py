@@ -3,20 +3,18 @@ Authentication and Password Hashing Security Utilities.
 
 Provides bcrypt password hashing, verification, and HS256 JWT access and refresh token generation.
 """
+from datetime import datetime, timedelta, timezone
 import os
-from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 
 # Configuration
 JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretjwtkeyforfifawc2026jwtencryption123!")
 JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -29,8 +27,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches hash, False otherwise.
     """
-    safe_pwd = plain_password[:72] if plain_password else ""
-    return pwd_context.verify(safe_pwd, hashed_password)
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        pwd_bytes = plain_password.encode("utf-8")[:72]
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
@@ -42,8 +46,9 @@ def get_password_hash(password: str) -> str:
     Returns:
         Bcrypt hashed string representation.
     """
-    safe_pwd = password[:72] if password else ""
-    return pwd_context.hash(safe_pwd)
+    pwd_bytes = (password or "").encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -57,47 +62,49 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
         Encoded JWT token string.
     """
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
-    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
 
 
 def create_refresh_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
-    """Generate a signed JWT refresh token.
+    """Generate a long-lived signed JWT refresh token.
 
     Args:
-        subject: Token subject claim (typically username).
+        subject: Token subject claim.
         expires_delta: Optional custom expiration timedelta.
 
     Returns:
-        Encoded JWT refresh token string.
+        Encoded JWT token string.
     """
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-
+        expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
-    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
 
 
 def verify_token(token: str, token_type: str = "access") -> Optional[str]:
-    """Decode and validate a JWT token, returning the subject claim if valid.
+    """Verify and decode a JWT token string, returning the subject (username).
 
     Args:
-        token: Signed JWT token string.
-        token_type: Expected token type claim ('access' or 'refresh').
+        token: JWT string to verify.
+        token_type: Expected token type ("access" or "refresh").
 
     Returns:
-        Subject username string if token is valid, None otherwise.
+        Subject username string if valid, None otherwise.
     """
     try:
-        decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if decoded_token.get("type") == token_type:
-            return decoded_token.get("sub")
-        return None
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        username: Optional[str] = payload.get("sub")
+        payload_type: Optional[str] = payload.get("type")
+        if username is None or payload_type != token_type:
+            return None
+        return username
     except jwt.PyJWTError:
         return None

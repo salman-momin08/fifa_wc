@@ -1,7 +1,7 @@
 """
 Pydantic Validation Schemas for Authentication, Registration, and JWT Tokens.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserRegister(BaseModel):
@@ -27,5 +27,4 @@ class UserOut(BaseModel):
     role: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

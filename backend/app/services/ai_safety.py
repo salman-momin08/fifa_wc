@@ -55,7 +55,7 @@ class AISafetyService:
         """
         if not text:
             return ""
-        text = re.sub(r"\bTKT-\d{4,8}-\b|\bTKT\d{6,10}\b", "[REDACTED TICKET]", text)
+        text = re.sub(r"\bTKT-\d{4,8}-|\bTKT\d{6,10}\b", "[REDACTED TICKET]", text)
         text = re.sub(r"\b(?:\d[ -]*?){13,16}\b", "[REDACTED CARD]", text)
         text = re.sub(r"[\w\.-]+@[\w\.-]+\.\w+", "[REDACTED EMAIL]", text)
         text = re.sub(

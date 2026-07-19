@@ -16,7 +16,7 @@ from app.database import CrowdSensor, SOPRule, TransitAlert, WayfindingNode
 EMAIL_RE = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
 PHONE_RE = re.compile(r"\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}")
 CREDIT_CARD_RE = re.compile(r"\b(?:\d[ -]*?){13,16}\b")
-TICKET_RE = re.compile(r"\bTKT-\d{4,8}-\b|\bTKT\d{6,10}\b")
+TICKET_RE = re.compile(r"\bTKT-\d{4,8}-|\bTKT\d{6,10}\b")
 
 # Bad tokens suggesting prompt injection
 INJECTION_KEYWORDS = [

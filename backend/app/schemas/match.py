@@ -3,7 +3,7 @@ Pydantic Schemas for Match Telemetry & Fixtures.
 """
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MatchCenterOut(BaseModel):
@@ -25,8 +25,7 @@ class MatchCenterOut(BaseModel):
     attendance: str = Field(..., description="Live spectator attendance count")
     stadium_capacity_pct: float = Field(..., description="Stadium capacity utilization percentage")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MatchFixtureOut(BaseModel):
@@ -35,8 +34,7 @@ class MatchFixtureOut(BaseModel):
     teams: str = Field(..., description="Competing national teams")
     stage: str = Field(..., description="Tournament stage")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MatchUpdateReq(BaseModel):

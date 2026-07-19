@@ -38,14 +38,14 @@ class MatchSimulator:
         """
         current_time = time.time()
 
+        elapsed_mins = int((current_time % MATCH_CYCLE_SECONDS) / 60)
+        if elapsed_mins == 0:
+            elapsed_mins = 1
+
         # Dynamic match minute (0 to 90+ minutes cycling smoothly over real time)
         if db_match and db_match.match_minute:
             minute_str = db_match.match_minute
         else:
-            elapsed_mins = int((current_time % MATCH_CYCLE_SECONDS) / 60)
-            if elapsed_mins == 0:
-                elapsed_mins = 1
-
             if elapsed_mins > 90:
                 minute_str = f"90+{elapsed_mins - 90}'"
             else:
@@ -86,7 +86,7 @@ class MatchSimulator:
         away_flag = db_match.away_flag if db_match else DEFAULT_AWAY_FLAG
 
         return {
-            "id": db_match.id if db_match else 1,
+            "id": db_match.id if (db_match and db_match.id) else 1,
             "home_team": home_team,
             "home_flag": home_flag,
             "home_score": home_score,

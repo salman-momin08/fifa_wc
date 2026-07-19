@@ -3,7 +3,7 @@ Pydantic Validation Schemas for Crowd Density Sensors and Advisories.
 """
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CrowdSensorUpdate(BaseModel):
@@ -17,5 +17,4 @@ class CrowdSensorOut(BaseModel):
     density_percentage: int
     advisory: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

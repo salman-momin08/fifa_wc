@@ -4,7 +4,7 @@ Pydantic Validation Schemas for Safety Incident Reporting and Approval Workflows
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IncidentReport(BaseModel):
@@ -30,5 +30,4 @@ class IncidentOut(BaseModel):
     is_approved: bool
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

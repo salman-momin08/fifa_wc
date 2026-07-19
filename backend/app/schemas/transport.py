@@ -1,7 +1,7 @@
 """
 Pydantic Validation Schemas for Transport Alerts and Transit Status Updates.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TransitAlertUpdate(BaseModel):
@@ -16,5 +16,4 @@ class TransitAlertOut(BaseModel):
     status: str
     delay_minutes: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
