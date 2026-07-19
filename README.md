@@ -1,6 +1,6 @@
 # FIFA World Cup 2026 - Stadium Operations & Fan Portal (v2.0 Enterprise Grade)
 
-A production-grade, enterprise-scale stadium operations command and fan experience platform designed for the FIFA World Cup 2026. This system leverages Google Gemini (with anchored RAG context retrieval and safe offline fallbacks) to provide real-time wayfinding, accessibility navigation, crowd analytics & forecasting, transit intelligence, sustainability tracking, and human-in-the-loop safety incident response.
+A production-grade, enterprise-scale stadium operations command and fan experience platform designed for the FIFA World Cup 2026. This system leverages Google Gemini (with anchored RAG context retrieval and safe offline fallbacks) alongside a real-time dynamic **MatchSimulator Engine** to provide real-time wayfinding, accessibility navigation, live match telemetry, crowd analytics & forecasting, transit intelligence, sustainability tracking, and human-in-the-loop safety incident response.
 
 ---
 
@@ -20,6 +20,7 @@ Fifa_Wc/
 │   │   │   ├── auth.py            # JWT Authentication & user registration
 │   │   │   ├── crowd.py           # Crowd telemetry & 15/30/60m density forecasting
 │   │   │   ├── decision.py        # Safety incident copilot & RBAC approvals
+│   │   │   ├── match.py           # Real-time Match Telemetry API (/api/match/live, /api/match/fixtures)
 │   │   │   ├── sustainability.py   # Green Score calculator & station locator
 │   │   │   ├── transport.py       # Transit alerts aggregator
 │   │   │   └── ws.py              # Real-time WebSocket connection manager (`/ws/updates`)
@@ -38,9 +39,10 @@ Fifa_Wc/
 │   │   │   ├── ai_safety.py       # RAG context, PII scrub, injection check & grounding
 │   │   │   ├── analytics.py       # Predictive crowd flow density calculator
 │   │   │   ├── llm.py             # Gemini API client & offline rules engine
+│   │   │   ├── match_simulator.py # Real-time Dynamic Match Telemetry Engine (scores, possession, shots)
 │   │   │   ├── route_optimizer.py # Dijkstra pathfinder (fastest, safest, accessible, least crowded)
 │   │   │   └── sustainability.py  # Green Score, CO2 calculation, and badge engine
-│   │   ├── database.py            # SQLAlchemy models (User, Incident, WayfindingNode, etc.)
+│   │   ├── database.py            # SQLAlchemy models (User, Incident, MatchCenter, WayfindingNode, etc.)
 │   │   ├── main.py                # FastAPI app, security headers, rate limiter & Prometheus metrics
 │   │   ├── tasks.py               # Celery async background tasks (briefs & notifications)
 │   │   └── worker.py              # Celery app initialization with Redis broker
@@ -55,6 +57,11 @@ Fifa_Wc/
 │   │   ├── page.js                # Multi-role dashboard with WebSocket real-time updates
 │   │   ├── globals.css            # WCAG high-contrast, skip-nav & accessibility styles
 │   │   └── SWRegister.js          # Service Worker registration client component
+│   ├── components/
+│   │   ├── AIAssistant/           # AI Assistant chat workspace with localStorage persistence
+│   │   ├── FanPortal/             # Live Match Center, Transit & Safety Broadcast Channel
+│   │   ├── VolunteerConsole/      # Field staff incident logger & SOP guidance
+│   │   └── OrganizerDashboard/    # Command center, crowd telemetry & incident approval panel
 │   ├── lib/
 │   │   ├── api.js                 # Frontend API client
 │   │   ├── useAuth.js             # Custom JWT authentication hook
@@ -64,6 +71,7 @@ Fifa_Wc/
 │   │   ├── manifest.json          # PWA manifest
 │   │   └── sw.js                  # Service Worker for offline asset caching
 │   └── Dockerfile                 # Frontend container definition
+├── render.yaml                    # Render Blueprint specification for 1-click cloud deployment
 ├── docker-compose.yml             # Full production stack (Postgres, Redis, Celery, Prometheus, Grafana)
 ├── prometheus.yml                 # Prometheus metrics scraping configuration
 ├── ARCHITECTURE.md                # System topology, database schema & Traceability Matrix
@@ -73,14 +81,25 @@ Fifa_Wc/
 
 ---
 
-## Getting Started
+## API Endpoints Overview
 
-### Prerequisites
-- **Python 3.11+**
-- **Node.js 18+**
-- **Docker & Docker Compose** (optional for containerized deployment)
+| Category | Endpoint | Method | Description |
+|---|---|---|---|
+| **Auth** | `/api/auth/token` | POST | Authenticate user & issue OAuth2 JWT access/refresh tokens |
+| **Auth** | `/api/auth/register` | POST | Register a new user (`fan`, `volunteer`, `organizer`, `admin`) |
+| **Match** | `/api/match/live` | GET | Real-time dynamic match telemetry (scores, possession %, shots, capacity) |
+| **Match** | `/api/match/fixtures` | GET | Upcoming stadium match fixtures & schedules |
+| **Match** | `/api/match/update` | POST | Update live match score & broadcast over WebSockets |
+| **Assistant**| `/api/assistant/query` | POST | Fan Q&A, RAG grounding, and Dijkstra route optimization |
+| **Crowd** | `/api/crowd/status` | GET | Current crowd density sensors & 15/30/60m predictive forecasts |
+| **Transport**| `/api/transport/status` | GET | Transit alert statuses and delay summaries |
+| **Decision** | `/api/decision/report` | POST | Log safety incident (DRAFT status) |
+| **Decision** | `/api/decision/approve` | POST | RBAC restricted (`organizer`/`admin`) incident approval & broadcast |
+| **WebSocket**| `/ws/updates` | WS | Real-time push updates for match scores, transit delays, and safety alerts |
 
 ---
+
+## Getting Started
 
 ### Option A: Running with Docker Compose (Recommended)
 
@@ -99,7 +118,6 @@ Fifa_Wc/
 - **Interactive OpenAPI Docs**: `http://127.0.0.1:8000/docs`
 - **Prometheus Metrics**: `http://localhost:9090`
 - **Grafana Dashboard**: `http://localhost:3001`
-- **Health Check**: `http://127.0.0.1:8000/health`
 
 ---
 
@@ -127,38 +145,8 @@ pytest -v
 
 #### 3. Frontend Setup (Next.js)
 ```bash
-cd frontend
+cd backend
 npm install
 npm run dev
 ```
 Open `http://localhost:3000` in your web browser.
-
----
-
-## Key Enterprise Upgrades Verified
-
-### Gate 1: Code Quality & Clean Architecture
-- **Layered Architecture**: Strict separation between API Routers, Service logic, Repository DB queries, and Pydantic Schemas.
-- Full type annotations throughout Python & JavaScript codebases.
-
-### Gate 2: Security, Authentication & Injection Blockers
-- **JWT & RBAC**: OAuth2 password bearer flow with bcrypt password hashing. Roles (`fan`, `volunteer`, `organizer`, `admin`) enforce endpoint authorization.
-- **PII Scrubbing & Prompt Injection**: Scans input for ticket serials, credit cards, emails, and phone numbers. Rejects prompt hijacking patterns before AI invocation.
-- **Human-in-the-Loop SOPs**: Incident reports logged by field staff start in `DRAFT` status and require explicit `organizer`/`admin` approval before broadcast.
-- **Security Headers**: Standard OWASP security headers (`CSP`, `HSTS`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
-
-### Gate 3: High-Crowd Efficiency, Real-Time & Fallbacks
-- **WebSockets (`/ws/updates`)**: Instant real-time push updates for crowd density changes, transit delays, and safety incident approvals (replacing client polling).
-- **Distributed Rate Limiting**: Redis-backed rate limiter (60 req/min) with in-memory fallback.
-- **Offline Resilience & PWA**: PWA shell with Service Worker (`sw.js`) and local offline lookup dictionaries for wayfinding and SOPs under dense crowd conditions.
-
-### Gate 4: Observability & Background Jobs
-- **Metrics & Sentry**: Integrated Prometheus counter/histogram metrics (`/metrics`) and Sentry error tracking.
-- **Async Workers**: Celery app with Redis broker for background operations summary compilation and notification dispatch.
-
-### Gate 5: Accessibility (WCAG 2.2 AA+)
-- ARIA landmarks, `aria-live` announcement region for screen readers, keyboard focus indicators, skip-to-content link (`.skip-nav`), and prefers-reduced-motion support.
-- Native browser Web Speech API text-to-speech (TTS) voice navigation.
-
-### Gate 6: Traceability
-- Full traceability matrix maintained in [ARCHITECTURE.md](file:///c:/Users/kmomin/OneDrive%20-%20Adobe/Desktop/Fifa_Wc/ARCHITECTURE.md).

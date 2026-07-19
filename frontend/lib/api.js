@@ -153,3 +153,54 @@ export async function approveIncidentBroadcast(id, customAction) {
   if (res.ok) return await res.json();
   throw new Error("Failed to approve incident");
 }
+
+export async function fetchLiveMatch(offlineMode) {
+  if (offlineMode) {
+    return {
+      home_team: "CANADA", home_flag: "🇨🇦", home_score: 2,
+      away_team: "USA", away_flag: "🇺🇸", away_score: 1,
+      match_minute: "76th Minute", is_live: true,
+      possession_home: 52, possession_away: 48,
+      shots_home: 12, shots_away: 9,
+      pass_accuracy_home: 85, pass_accuracy_away: 81,
+      attendance: "68,243", stadium_capacity_pct: 92.4
+    };
+  }
+  try {
+    const res = await fetch(`${API_BASE}/match/live`);
+    if (res.ok) return await res.json();
+  } catch {
+    // Offline fallback
+  }
+  return {
+    home_team: "CANADA", home_flag: "🇨🇦", home_score: 2,
+    away_team: "USA", away_flag: "🇺🇸", away_score: 1,
+    match_minute: "76th Minute", is_live: true,
+    possession_home: 52, possession_away: 48,
+    shots_home: 12, shots_away: 9,
+    pass_accuracy_home: 85, pass_accuracy_away: 81,
+    attendance: "68,243", stadium_capacity_pct: 92.4
+  };
+}
+
+export async function fetchMatchFixtures(offlineMode) {
+  if (offlineMode) {
+    return [
+      { id: 1, date_label: "Tomorrow - 18:00 Local", teams: "🇲🇽 Mexico vs 🇦🇷 Argentina", stage: "Matchday 2 - Group Stage" },
+      { id: 2, date_label: "July 16 - 20:00 Local", teams: "🇫🇷 France vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", stage: "Matchday 3 - Group Stage" },
+      { id: 3, date_label: "July 18 - 17:00 Local", teams: "🇧🇷 Brazil vs 🇪🇸 Spain", stage: "Round of 32" }
+    ];
+  }
+  try {
+    const res = await fetch(`${API_BASE}/match/fixtures`);
+    if (res.ok) return await res.json();
+  } catch {
+    // Offline fallback
+  }
+  return [
+    { id: 1, date_label: "Tomorrow - 18:00 Local", teams: "🇲🇽 Mexico vs 🇦🇷 Argentina", stage: "Matchday 2 - Group Stage" },
+    { id: 2, date_label: "July 16 - 20:00 Local", teams: "🇫🇷 France vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", stage: "Matchday 3 - Group Stage" },
+    { id: 3, date_label: "July 18 - 17:00 Local", teams: "🇧🇷 Brazil vs 🇪🇸 Spain", stage: "Round of 32" }
+  ];
+}
+

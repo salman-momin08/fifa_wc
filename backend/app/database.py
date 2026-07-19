@@ -79,6 +79,37 @@ class User(Base):
     role = Column(String, default="fan")  # fan, volunteer, organizer, admin
     is_active = Column(Boolean, default=True)
 
+class MatchCenter(Base):
+    __tablename__ = "match_center"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    home_team = Column(String, nullable=False)
+    home_flag = Column(String, nullable=False)
+    home_score = Column(Integer, nullable=False)
+    away_team = Column(String, nullable=False)
+    away_flag = Column(String, nullable=False)
+    away_score = Column(Integer, nullable=False)
+    match_minute = Column(String, nullable=True)
+    is_live = Column(Boolean, default=True)
+    possession_home = Column(Integer, nullable=True)
+    possession_away = Column(Integer, nullable=True)
+    shots_home = Column(Integer, nullable=True)
+    shots_away = Column(Integer, nullable=True)
+    pass_accuracy_home = Column(Integer, nullable=True)
+    pass_accuracy_away = Column(Integer, nullable=True)
+    attendance = Column(String, nullable=True)
+    stadium_capacity_pct = Column(Float, nullable=True)
+
+
+class MatchFixture(Base):
+    __tablename__ = "match_fixtures"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    date_label = Column(String, nullable=False)
+    teams = Column(String, nullable=False)
+    stage = Column(String, nullable=False)
+
+
 def get_db():
     db = SessionLocal()
     try:

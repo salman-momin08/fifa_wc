@@ -109,7 +109,7 @@ class AISafetyService:
         return is_grounded, corrected_response, hallucinated_locations
 
     @classmethod
-    def process_ai_safety(
+    async def process_ai_safety(
         cls,
         db: Session,
         query: str,
@@ -141,7 +141,10 @@ class AISafetyService:
         base_confidence = 0.95 if not has_specific_queries or sources else 0.50
 
         # 4. Generate AI response (using context)
-        raw_response = ai_response_generator_func(sanitized_query, context)
+        raw_response = await ai_response_generator_func(sanitized_query, context)
+        if not isinstance(raw_response, str):
+            raw_response = str(raw_response)
+
 
         # 5. Output Verification
         is_grounded, verified_response, violations = cls.verify_output_grounding(db, raw_response)

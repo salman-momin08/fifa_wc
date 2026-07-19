@@ -64,7 +64,7 @@ async def query_assistant(req: AssistantRequest, db: Session = Depends(get_db)):
 
     try:
         # Run AI processing with Safety Checks & Grounding
-        safety_output = AISafetyService.process_ai_safety(db, req.query, lambda q, ctx: run_llm_chain(db, "System Prompt", f"Query: {q}\nContext: {ctx}", req.lang))
+        safety_output = await AISafetyService.process_ai_safety(db, req.query, ai_generator)
         
         # If route was calculated, append structured details to response if not already present
         if route_details and "error" not in route_details and safety_output["confidence"] >= 0.60:

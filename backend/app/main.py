@@ -22,6 +22,7 @@ from app.api.crowd import router as crowd_router
 from app.api.transport import router as transport_router
 from app.api.sustainability import router as sustainability_router
 from app.api.decision import router as decision_router
+from app.api.match import router as match_router
 from app.api.ws import router as ws_router
 
 # ─── Sentry Error Tracking ───────────────────────────────────────────────────
@@ -186,6 +187,7 @@ app.include_router(crowd_router,        prefix="/api/crowd",          tags=["Cro
 app.include_router(transport_router,    prefix="/api/transport",      tags=["Transport"])
 app.include_router(sustainability_router, prefix="/api/sustainability", tags=["Sustainability"])
 app.include_router(decision_router,     prefix="/api/decision",       tags=["Decision"])
+app.include_router(match_router,        prefix="/api/match",          tags=["Match"])
 app.include_router(ws_router,           prefix="/ws",                 tags=["WebSocket"])
 
 @app.get("/")
