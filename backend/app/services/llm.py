@@ -1,8 +1,17 @@
-import re
+"""
+Google Gemini LLM Integration & Deterministic Fallback Engine.
+
+Manages grounded Gemini REST API calls, PII scrubbing, injection censorship,
+and multi-language deterministic SOP fallbacks (English, Spanish, French, Arabic, Portuguese).
+"""
 import os
+import re
+from typing import Optional
+
 import httpx
 from sqlalchemy.orm import Session
-from app.database import WayfindingNode, SOPRule, TransitAlert, CrowdSensor
+
+from app.database import CrowdSensor, SOPRule, TransitAlert, WayfindingNode
 
 # Regex patterns for PII Redaction
 EMAIL_RE = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")

@@ -1,4 +1,10 @@
+"""
+Celery Worker Initialization and Configuration.
+
+Configures Redis broker and result backend for background task processing.
+"""
 import os
+
 from celery import Celery
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -7,7 +13,7 @@ celery_app = Celery(
     "fifa_wc_worker",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["app.tasks"]
+    include=["app.tasks"],
 )
 
 celery_app.conf.update(

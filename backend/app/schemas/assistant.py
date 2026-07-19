@@ -1,9 +1,15 @@
-from pydantic import BaseModel, Field
+"""
+Pydantic Validation Schemas for Multilingual AI Assistant.
+"""
 from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class AssistantRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="Fan request or navigation query")
-    lang: str = Field("en", min_length=2, max_length=5, description="Requested language")
+    lang: str = Field("en", min_length=2, max_length=5, description="Requested language code")
+
 
 class AssistantOut(BaseModel):
     response: str

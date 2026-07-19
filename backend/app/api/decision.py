@@ -23,7 +23,15 @@ router = APIRouter()
 is_organizer_or_admin = RoleChecker(["organizer", "admin"])
 
 @router.get("/list")
-def list_incidents(db: Session = Depends(get_db)):
+def list_incidents(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
+    """Retrieve all logged safety incidents with status and SOP details.
+
+    Args:
+        db: Database session dependency.
+
+    Returns:
+        List of incident dictionaries.
+    """
     repo = StadiumRepository(db)
     incidents = repo.get_incidents()
     return [
@@ -36,15 +44,25 @@ def list_incidents(db: Session = Depends(get_db)):
             "gate": i.gate,
             "suggested_action": i.suggested_action,
             "is_approved": i.is_approved,
-            "timestamp": i.timestamp.isoformat()
+            "timestamp": i.timestamp.isoformat(),
         }
         for i in incidents
     ]
 
+
 @router.post("/report")
-async def report_incident(req: IncidentReport, db: Session = Depends(get_db)):
+async def report_incident(req: IncidentReport, db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """Log a new safety incident report as a DRAFT and generate an AI SOP action plan.
+
+    Args:
+        req: IncidentReport schema with title, description, gate, and severity.
+        db: Database session dependency.
+
+    Returns:
+        Dictionary containing confirmation message, incident_id, and AI suggested_action.
+    """
     repo = StadiumRepository(db)
-    
+
     # 1. Fetch matching SOP from DB
     sop = repo.get_sop_rule_by_gate_or_keyword(req.gate, req.title)
     sop_info = sop.action_plan if sop else "Standard emergency evacuation and safety protocol."
@@ -56,7 +74,7 @@ async def report_incident(req: IncidentReport, db: Session = Depends(get_db)):
         if s.zone.lower() in req.gate.lower() or req.gate.lower() in s.zone.lower():
             active_crowd_ctx = f"Current crowd density in this sector: {s.density_percentage}%."
             break
-            
+
     alerts = repo.get_transit_alerts()
     active_transit_ctx = "No active transport suspensions near this sector."
     for a in alerts:
@@ -71,7 +89,6 @@ async def report_incident(req: IncidentReport, db: Session = Depends(get_db)):
     gate_history_count = sum(1 for i in incidents_history if i.gate == req.gate and i.status == "resolved")
     history_ctx = f"Historical incident frequency at {req.gate}: {gate_history_count} resolved incidents."
 
-    # Instruct LLM to formulate safety suggestions anchored strictly to the DB SOP + context
     system_prompt = (
         "You are an expert World Cup Safety Coordinator. Review the reported incident "
         "and draft an actionable, step-by-step action plan for stadium staff.\n"
@@ -93,10 +110,9 @@ async def report_incident(req: IncidentReport, db: Session = Depends(get_db)):
         f"- {weather_ctx}\n"
         f"- {history_ctx}"
     )
-    
+
     action_plan = await run_llm_chain(db, system_prompt, user_prompt, "en")
 
-    # Create a draft incident (NOT active yet - human-in-the-loop check)
     new_incident = Incident(
         title=req.title,
         description=req.description,
@@ -104,22 +120,38 @@ async def report_incident(req: IncidentReport, db: Session = Depends(get_db)):
         severity=req.severity,
         status="draft",
         suggested_action=action_plan,
-        is_approved=False
+        is_approved=False,
     )
     repo.create_incident(new_incident)
 
     return {
         "message": "Incident logged as DRAFT. Awaiting Organizer review.",
         "incident_id": new_incident.id,
-        "suggested_action": action_plan
+        "suggested_action": action_plan,
     }
+
 
 @router.post("/approve")
 async def approve_incident(
-    req: IncidentApproval, 
-    db: Session = Depends(get_db), 
-    current_user = Depends(is_organizer_or_admin)
-):
+    req: IncidentApproval,
+    db: Session = Depends(get_db),
+    current_user=Depends(is_organizer_or_admin),
+) -> Dict[str, Any]:
+    """Approve a draft safety incident and broadcast its action plan to all connected clients.
+
+    Requires organizer or admin role.
+
+    Args:
+        req: IncidentApproval payload with incident_id and optional custom_action.
+        db: Database session dependency.
+        current_user: Authenticated organizer/admin user model.
+
+    Returns:
+        Dictionary with confirmation, incident_id, status, is_approved, and action_plan.
+
+    Raises:
+        HTTPException: 404 if incident ID is not found.
+    """
     repo = StadiumRepository(db)
     incident = repo.get_incident_by_id(req.incident_id)
     if not incident:

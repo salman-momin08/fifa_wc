@@ -1,8 +1,17 @@
-import os
+"""
+SQLAlchemy ORM Database Configuration & Model Definitions.
+
+Defines tables for Incidents, TransitAlerts, CrowdSensors, SOPRules,
+WayfindingNodes, Users, MatchCenter, and MatchFixtures. Initializes
+SQLite/PostgreSQL database connections and handles initial seed data.
+"""
 import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, DateTime
+import os
+from typing import Generator
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 # Use DATABASE_URL env var if set (PostgreSQL in Docker/production),
 # otherwise fall back to local SQLite for development without Docker.
@@ -18,47 +27,52 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+
 class Incident(Base):
     __tablename__ = "incidents"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    status = Column(String, default="draft")  # draft, active, resolved
-    severity = Column(String, nullable=False)  # low, medium, high
+    status = Column(String, default="draft")
+    severity = Column(String, nullable=False)
     gate = Column(String, nullable=False)
     suggested_action = Column(String, nullable=True)
     is_approved = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
+
 class TransitAlert(Base):
     __tablename__ = "transit_alerts"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     route = Column(String, nullable=False)
-    status = Column(String, nullable=False)  # normal, delayed, suspended
+    status = Column(String, nullable=False)
     delay_minutes = Column(Integer, default=0)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
+
 class CrowdSensor(Base):
     __tablename__ = "crowd_sensors"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     zone = Column(String, nullable=False)
     density_percentage = Column(Integer, nullable=False)
     advisory = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
+
 class SOPRule(Base):
     __tablename__ = "sop_rules"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     scenario = Column(String, unique=True, nullable=False)
     action_plan = Column(String, nullable=False)
 
+
 class WayfindingNode(Base):
     __tablename__ = "wayfinding_nodes"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
     zone = Column(String, nullable=False)
@@ -70,18 +84,20 @@ class WayfindingNode(Base):
     coordinates_lat = Column(Float, nullable=False)
     coordinates_lng = Column(Float, nullable=False)
 
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="fan")  # fan, volunteer, organizer, admin
+    role = Column(String, default="fan")
     is_active = Column(Boolean, default=True)
+
 
 class MatchCenter(Base):
     __tablename__ = "match_center"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     home_team = Column(String, nullable=False)
     home_flag = Column(String, nullable=False)
@@ -103,21 +119,28 @@ class MatchCenter(Base):
 
 class MatchFixture(Base):
     __tablename__ = "match_fixtures"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     date_label = Column(String, nullable=False)
     teams = Column(String, nullable=False)
     stage = Column(String, nullable=False)
 
 
-def get_db():
+def get_db() -> Generator[Session, None, None]:
+    """Dependency generator that yields an isolated SQLAlchemy database session.
+
+    Yields:
+        Session: Database session instance.
+    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-def init_db():
+
+def init_db() -> None:
+    """Create all ORM database tables and populate default seed records if empty."""
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()

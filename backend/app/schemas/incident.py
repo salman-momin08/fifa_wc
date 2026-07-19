@@ -1,6 +1,11 @@
-from pydantic import BaseModel, Field
+"""
+Pydantic Validation Schemas for Safety Incident Reporting and Approval Workflows.
+"""
 from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel, Field
+
 
 class IncidentReport(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
@@ -8,9 +13,11 @@ class IncidentReport(BaseModel):
     gate: str = Field(..., min_length=2, max_length=50)
     severity: str = Field(..., pattern="^(low|medium|high)$")
 
+
 class IncidentApproval(BaseModel):
     incident_id: int
     custom_action: Optional[str] = Field(None, max_length=1000)
+
 
 class IncidentOut(BaseModel):
     id: int
