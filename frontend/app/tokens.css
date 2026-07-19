@@ -1,0 +1,17 @@
+/* Design Sizing & Layout Tokens */
+html {
+  font-size: 62.5%; /* Sets 1rem = 10px for clean calculation scaling */
+}
+
+:root {
+  /* Transitions */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Sizing Constraints */
+  --border-radius-lg: 1.6rem; /* 16px */
+  --border-radius-md: 1.0rem; /* 10px */
+  --border-radius-sm: 0.6rem; /* 6px */
+  
+  /* Mobile-first graphics tokens */
+  --glass-blur: blur(0.6rem);
+}

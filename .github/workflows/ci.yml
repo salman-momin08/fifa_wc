@@ -1,0 +1,106 @@
+name: FIFA WC 2026 Stadium Operations — CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Backend: Lint, Test, Security Scan ─────────────────────────────────────
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: stadium_ops_test
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        working-directory: backend
+        run: |
+          pip install flake8
+          flake8 app/ --max-line-length=120 --ignore=E501,W503
+
+      - name: Run pytest suite
+        working-directory: backend
+        env:
+          DATABASE_URL: sqlite:///./test_stadium_ops.db
+          JWT_SECRET: test-secret-key-for-ci-pipeline
+          GEMINI_API_KEY: ""
+        run: pytest tests/ -v --tb=short
+
+      - name: Security scan (bandit)
+        working-directory: backend
+        run: |
+          pip install bandit
+          bandit -r app/ -ll -x app/tests/
+
+  # ── Frontend: Lint, Build Validation ───────────────────────────────────────
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Lint Next.js
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check build (next build dry-run)
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api
+          NEXT_PUBLIC_WS_URL: ws://localhost:8000/ws/updates
+        run: npm run build
+
+  # ── Docker Build Validation ─────────────────────────────────────────────────
+  docker:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t fifa-wc-backend:ci ./backend
+
+      - name: Build frontend image
+        run: docker build -t fifa-wc-frontend:ci ./frontend

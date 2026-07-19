@@ -1,0 +1,3 @@
+{
+  "info": "The backend has been migrated to Python FastAPI. Please refer to requirements.txt for dependencies."
+}

@@ -1,0 +1,111 @@
+.incidentCard {
+  padding: 1.5rem;
+  border-radius: var(--border-radius-md);
+  border: 0.1rem solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 1.25rem;
+  transition: var(--transition-smooth);
+}
+
+.incidentCard:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.incidentCard.draft {
+  background: rgba(255, 179, 0, 0.03);
+  border-color: rgba(255, 179, 0, 0.2);
+}
+
+.incidentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.incidentTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.incidentDesc {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.sopBox {
+  background: var(--color-panel-inner);
+  border: 0.1rem solid var(--glass-border);
+  padding: 1.25rem;
+  border-radius: var(--border-radius-md);
+}
+
+.sopTitle {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sopText {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.sopActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.densitySlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 0.4rem;
+  border-radius: 0.2rem;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+/* Chrome, Safari, Opera and Edge */
+.densitySlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0.8rem var(--color-primary);
+  transition: transform 0.15s;
+}
+
+.densitySlider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Firefox */
+.densitySlider::-moz-range-thumb {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0.8rem var(--color-primary);
+  transition: transform 0.15s;
+}
+
+.densitySlider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}

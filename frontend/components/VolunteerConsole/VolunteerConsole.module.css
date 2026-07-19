@@ -1,0 +1,448 @@
+/* VolunteerConsole.module.css — Premium Mission-Critical UI */
+
+/* ================================================================
+   GRID LAYOUT
+   ================================================================ */
+.consoleGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  width: 100%;
+  max-width: 130rem;
+  margin: auto;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+@media (width > 64rem) {
+  .consoleGrid {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: stretch;
+  }
+}
+
+/* ================================================================
+   SHARED PANEL SHELL
+   ================================================================ */
+.panel {
+  background: rgba(10, 12, 22, 0.7);
+  border: 0.1rem solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.panelWarning {
+  border-color: rgba(255, 179, 0, 0.18);
+  box-shadow: 0 0 3rem rgba(255, 179, 0, 0.03), 0 1.2rem 4rem rgba(0,0,0,0.4);
+}
+
+.panelWarning::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.3rem;
+  background: var(--color-warning);
+  border-radius: 1.4rem 1.4rem 0 0;
+}
+
+.panelPrimary {
+  border-color: rgba(0, 230, 118, 0.18);
+  box-shadow: 0 0 3rem rgba(0, 230, 118, 0.03), 0 1.2rem 4rem rgba(0,0,0,0.4);
+}
+
+.panelPrimary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.3rem;
+  background: var(--color-primary);
+  border-radius: 1.4rem 1.4rem 0 0;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.6rem 1.75rem 1.2rem;
+  border-bottom: 0.1rem solid rgba(255, 255, 255, 0.05);
+}
+
+.panelIcon {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.panelIconWarning {
+  background: rgba(255, 179, 0, 0.1);
+  border: 0.1rem solid rgba(255, 179, 0, 0.2);
+}
+
+.panelIconPrimary {
+  background: rgba(0, 230, 118, 0.1);
+  border: 0.1rem solid rgba(0, 230, 118, 0.2);
+}
+
+.panelHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.panelTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01rem;
+}
+
+.panelSubtitle {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.panelBody {
+  padding: 1.5rem 1.75rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.panelBody::-webkit-scrollbar {
+  display: none;
+}
+
+/* ================================================================
+   STATUS BANNER
+   ================================================================ */
+.statusBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+  animation: slideDown 0.2s ease;
+}
+
+.statusSuccess {
+  background: rgba(0, 230, 118, 0.08);
+  border: 0.1rem solid rgba(0, 230, 118, 0.2);
+  color: var(--color-primary);
+}
+
+.statusWarning {
+  background: rgba(255, 179, 0, 0.08);
+  border: 0.1rem solid rgba(255, 179, 0, 0.2);
+  color: var(--color-warning);
+}
+
+.statusError {
+  background: rgba(255, 82, 82, 0.08);
+  border: 0.1rem solid rgba(255, 82, 82, 0.2);
+  color: var(--color-danger);
+}
+
+.statusIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* ================================================================
+   FORM LAYOUT
+   ================================================================ */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.formFieldFull {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ================================================================
+   SEVERITY SELECTOR — three toggle tiles
+   ================================================================ */
+.severityRow {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.severityBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: 0.7rem;
+  border: 0.1rem solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  font-family: inherit;
+}
+
+.severityBtn:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.severityDot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+}
+
+.severityLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04rem;
+  color: var(--color-text-muted);
+}
+
+/* Active severity states */
+.severityBtnLow.severityActive {
+  background: rgba(0, 230, 118, 0.1);
+  border-color: rgba(0, 230, 118, 0.35);
+}
+.severityBtnLow.severityActive .severityLabel { color: var(--color-primary); }
+
+.severityBtnMedium.severityActive {
+  background: rgba(255, 179, 0, 0.1);
+  border-color: rgba(255, 179, 0, 0.35);
+}
+.severityBtnMedium.severityActive .severityLabel { color: var(--color-warning); }
+
+.severityBtnHigh.severityActive {
+  background: rgba(255, 82, 82, 0.1);
+  border-color: rgba(255, 82, 82, 0.35);
+}
+.severityBtnHigh.severityActive .severityLabel { color: var(--color-danger); }
+
+/* ================================================================
+   SUBMIT BUTTON
+   ================================================================ */
+.submitBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 0.8rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  background: linear-gradient(135deg, var(--color-warning), #e65c00);
+  color: #07090e;
+  box-shadow: 0 0.4rem 1.5rem rgba(255, 179, 0, 0.2);
+}
+
+.submitBtn:hover {
+  transform: translateY(-0.15rem);
+  box-shadow: 0 0.8rem 2.5rem rgba(255, 179, 0, 0.35);
+}
+
+.submitBtn:active {
+  transform: translateY(0);
+}
+
+/* ================================================================
+   DUTY CHECKLIST
+   ================================================================ */
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 0.1rem solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.8rem;
+}
+
+.checklistTitle {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.07rem;
+  margin-bottom: 0.3rem;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.checklistBullet {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: rgba(0, 230, 118, 0.1);
+  border: 0.1rem solid rgba(0, 230, 118, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* ================================================================
+   INCIDENT FEED
+   ================================================================ */
+.incidentFeedTitle {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.07rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liveDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--color-danger);
+  animation: pulseAnim 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.incidentFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.incidentFeed::-webkit-scrollbar {
+  display: none;
+}
+
+.incidentItem {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 82, 82, 0.04);
+  border: 0.1rem solid rgba(255, 82, 82, 0.18);
+  border-left: 0.3rem solid var(--color-danger);
+  transition: var(--transition-smooth);
+}
+
+.incidentItem:hover {
+  background: rgba(255, 82, 82, 0.07);
+}
+
+.incidentItemBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.incidentItemTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.incidentItemGate {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.04rem;
+}
+
+.incidentItemAction {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.allClearBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  border-radius: 0.8rem;
+  background: rgba(0, 230, 118, 0.04);
+  border: 0.1rem dashed rgba(0, 230, 118, 0.2);
+  text-align: center;
+}
+
+.allClearIcon {
+  font-size: 2rem;
+}
+
+.allClearText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.allClearSub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+   ANIMATIONS
+   ================================================================ */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-0.6rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,36 @@
+/* Theme Palette & Color Tokens */
+:root {
+  --bg-dark: #07090e;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #12162b 0%, #07090e 100%);
+  
+  /* Modern Refined Glassmorphism Colors */
+  --glass-bg: rgba(13, 16, 31, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 0.8rem 2.4rem rgba(0, 0, 0, 0.4); /* Mobile shadow default */
+  
+  /* FIFA World Cup Neon Colors */
+  --color-primary: #00e676;     /* Neon Green */
+  --color-secondary: #00e5ff;   /* Neon Cyan */
+  --color-warning: #ffb300;     /* Yellow */
+  --color-danger: #ff5252;      /* Red */
+  
+  /* Text & Surface Grays */
+  --color-text-main: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-panel-inner: rgba(9, 11, 23, 0.6);
+}
+
+/* High-Contrast Accessible Colors Override */
+.a11y-high-contrast {
+  --bg-dark: #000000;
+  --bg-gradient: none;
+  --glass-bg: #121212;
+  --glass-border: #ffffff;
+  --color-text-main: #ffffff;
+  --color-text-muted: #ffff00;
+  --color-primary: #00ff00;
+  --color-secondary: #00ffff;
+  --color-warning: #ffff00;
+  --color-danger: #ff0000;
+  --glass-shadow: none;
+}

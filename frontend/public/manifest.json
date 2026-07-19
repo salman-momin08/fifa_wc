@@ -1,0 +1,23 @@
+{
+  "name": "FIFA WC 2026 Stadium Operations",
+  "short_name": "StadiumOps",
+  "description": "AI-Enabled Stadium Operations & Fan Experience for FIFA World Cup 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["sports", "utilities", "productivity"]
+}

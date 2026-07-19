@@ -1,0 +1,81 @@
+.header {
+  backdrop-filter: blur(1.6rem);
+  background: rgba(8, 9, 13, 0.75);
+  border-bottom: 0.1rem solid rgba(255, 255, 255, 0.05);
+  padding: 1.1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--color-primary);
+  border: 0.1rem solid rgba(0, 230, 118, 0.25);
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.05rem;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02rem;
+  background: linear-gradient(to right, #ffffff 40%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Capsule Selector Navigation */
+.selector {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.25rem;
+  border-radius: 2rem;
+  border: 0.1rem solid rgba(255, 255, 255, 0.05);
+  gap: 0.15rem;
+}
+
+.btn {
+  background: transparent;
+  border: 0.1rem solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.8rem;
+  transition: var(--transition-smooth);
+}
+
+.btn:hover {
+  color: #fff;
+}
+
+.btnActive {
+  color: var(--color-primary);
+  background: rgba(0, 230, 118, 0.08);
+  border-color: rgba(0, 230, 118, 0.15);
+  box-shadow: 0 0 1.2rem rgba(0, 230, 118, 0.1);
+  text-shadow: 0 0 0.8rem rgba(0, 230, 118, 0.25);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: var(--color-secondary);
+}
