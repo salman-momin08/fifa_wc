@@ -6,7 +6,6 @@ and multi-language deterministic SOP fallbacks (English, Spanish, French, Arabic
 """
 import os
 import re
-from typing import Optional
 
 import httpx
 from sqlalchemy.orm import Session
@@ -193,7 +192,6 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
             # Safe call structure with XML constraints
             xml_user_prompt = f"<system_context>{system_prompt}</system_context>\n<user_query>{sanitized_user}</user_query>"
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": xml_user_prompt}]}]
             }
@@ -295,8 +293,8 @@ async def run_llm_chain(db: Session, system_prompt: str, user_prompt: str, lang:
             
     # Verify and correct any coordinates/gates in output to avoid hallucinations
     result_text = verify_and_correct_locations(db, result_text)
-    
+
     # Translate text if necessary
     result_text = translate_fallback(result_text, lang)
-    
+
     return result_text

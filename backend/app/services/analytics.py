@@ -8,9 +8,8 @@ notifications with explainable reasoning for stadium coordinators.
 from typing import Dict, Any
 
 from app.core.constants import (
-    CROWD_HIGH_DENSITY_THRESHOLD,
-    CROWD_MODERATE_DENSITY_THRESHOLD,
     CROWD_CRITICAL_FORECAST_THRESHOLD,
+    CROWD_HIGH_DENSITY_THRESHOLD,
 )
 
 

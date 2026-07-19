@@ -7,20 +7,21 @@ AI-generated SOP response plans and approve broadcasts via RBAC-protected endpoi
 """
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db, Incident
-from app.schemas.incident import IncidentReport, IncidentApproval, IncidentOut
-from app.repositories.stadium import StadiumRepository
-from app.core.dependencies import RoleChecker
-from app.services.llm import run_llm_chain
 from app.api.ws import manager
+from app.core.dependencies import RoleChecker
+from app.database import Incident, get_db
+from app.repositories.stadium import StadiumRepository
+from app.schemas.incident import IncidentApproval, IncidentReport
+from app.services.llm import run_llm_chain
 
 router = APIRouter()
 
 # Role definitions
 is_organizer_or_admin = RoleChecker(["organizer", "admin"])
+
 
 @router.get("/list")
 def list_incidents(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:

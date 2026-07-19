@@ -1,8 +1,10 @@
 """
 Pydantic Schemas for Sustainability Nudge & Green Score Engine.
 """
+from typing import Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, List
+
 
 class SustainabilityNudgeOut(BaseModel):
     nudge: str = Field(..., description="Location-aware sustainability recommendation")
@@ -15,6 +17,7 @@ class SustainabilityNudgeOut(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class SustainabilityActionReq(BaseModel):
     gate: str = Field(..., description="Gate or location of eco action")

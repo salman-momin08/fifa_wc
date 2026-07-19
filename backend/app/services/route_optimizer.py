@@ -8,7 +8,7 @@ transit delay bulletins, and fan preference profiles (fastest, safest, least_cro
 import heapq
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.database import CrowdSensor, TransitAlert, WayfindingNode, SessionLocal
+from app.database import CrowdSensor, TransitAlert, WayfindingNode
 from app.repositories.stadium import StadiumRepository
 
 # Adjacency list representation of stadium paths:

@@ -7,6 +7,7 @@ from app.worker import celery_app
 
 logger = logging.getLogger(__name__)
 
+
 @celery_app.task(name="tasks.generate_operations_summary", bind=True, max_retries=3)
 def generate_operations_summary(self, sensor_data: list, incident_data: list, transit_data: list) -> dict:
     """

@@ -1,8 +1,10 @@
 """
 Pydantic Schemas for Match Telemetry & Fixtures.
 """
-from pydantic import BaseModel, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field
+
 
 class MatchCenterOut(BaseModel):
     id: int = Field(..., description="Match record ID")
@@ -26,6 +28,7 @@ class MatchCenterOut(BaseModel):
     class Config:
         from_attributes = True
 
+
 class MatchFixtureOut(BaseModel):
     id: int = Field(..., description="Fixture record ID")
     date_label: str = Field(..., description="Fixture date and local kickoff time")
@@ -34,6 +37,7 @@ class MatchFixtureOut(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class MatchUpdateReq(BaseModel):
     home_score: Optional[int] = Field(None, ge=0, description="Updated home score")

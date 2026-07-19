@@ -1,8 +1,6 @@
 """
 Pydantic Validation Schemas for Authentication, Registration, and JWT Tokens.
 """
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 

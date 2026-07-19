@@ -1,16 +1,18 @@
 """
 Centralized Application Configuration.
+
 Loads environment variables safely using standard environment inspection.
 """
 import os
 from dataclasses import dataclass
+
 
 @dataclass
 class Settings:
     PROJECT_NAME: str = "FIFA World Cup 2026 Stadium Operations Core"
     VERSION: str = "2.0.0"
     API_PREFIX: str = "/api"
-    
+
     # Environment & Debug
     ENV: str = os.getenv("ENV", "development")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
@@ -32,5 +34,6 @@ class Settings:
     # Security & Monitoring
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
+
 
 settings = Settings()

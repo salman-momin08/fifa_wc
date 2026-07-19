@@ -142,7 +142,7 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Create all ORM database tables and populate default seed records if empty."""
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     try:
         # Seed default users
@@ -168,7 +168,7 @@ def init_db() -> None:
                 WayfindingNode(name="South Stand", zone="Grandstand", has_wheelchair_ramp=False, has_elevator=False, restroom_nearby=True, first_aid_nearby=False, coordinates_lat=45.4190, coordinates_lng=-75.6970),
             ]
             db.bulk_save_objects(nodes)
-            
+
         # Seed SOP Rules (Static Emergency Guidelines)
         if db.query(SOPRule).count() == 0:
             sops = [
@@ -178,7 +178,7 @@ def init_db() -> None:
                 SOPRule(scenario="Suspicious Object Gate B", action_plan="1. Initiate localized perimeter cordon of 50 meters. 2. Request security supervisor verification. 3. Halt entry scans at Gate B, redirect new lines to Concourse East. 4. Keep alarms silent to prevent crowd crush."),
             ]
             db.bulk_save_objects(sops)
-            
+
         # Seed Transit status
         if db.query(TransitAlert).count() == 0:
             alerts = [
@@ -188,7 +188,7 @@ def init_db() -> None:
                 TransitAlert(route="West Parking Express", status="normal", delay_minutes=0),
             ]
             db.bulk_save_objects(alerts)
-            
+
         # Seed Crowd sensors
         if db.query(CrowdSensor).count() == 0:
             sensors = [
@@ -198,7 +198,7 @@ def init_db() -> None:
                 CrowdSensor(zone="Transit Plaza", density_percentage=75, advisory="High Density (75%) - Dense queueing for bus transfers."),
             ]
             db.bulk_save_objects(sensors)
-            
+
         db.commit()
     except Exception as e:
         db.rollback()

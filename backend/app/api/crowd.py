@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.crowd import CrowdSensorUpdate, CrowdSensorOut
+from app.schemas.crowd import CrowdSensorUpdate
 from app.repositories.stadium import StadiumRepository
 from app.services.analytics import CrowdAnalyticsService
 from app.services.llm import run_llm_chain

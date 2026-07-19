@@ -4,16 +4,12 @@ FIFA World Cup 2026 Stadium Operations Core Application Entry Point.
 Initializes FastAPI application, security middleware headers, sliding-window rate limiting,
 Prometheus metrics, Sentry error tracking, global exception handlers, and API routers.
 """
-import json
-import os
-import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
+import os
+import time
 
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,6 +38,8 @@ from app.core.exceptions import (
 )
 from app.core.logging import logger
 from app.database import init_db
+
+load_dotenv()
 
 # ─── Sentry Error Tracking ───────────────────────────────────────────────────
 if settings.SENTRY_DSN:
@@ -237,14 +235,15 @@ app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 # ─── API Routers ──────────────────────────────────────────────────────────────
-app.include_router(auth_router,         prefix="/api/auth",           tags=["Auth"])
-app.include_router(assistant_router,    prefix="/api/assistant",      tags=["Assistant"])
-app.include_router(crowd_router,        prefix="/api/crowd",          tags=["Crowd"])
-app.include_router(transport_router,    prefix="/api/transport",      tags=["Transport"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+app.include_router(assistant_router, prefix="/api/assistant", tags=["Assistant"])
+app.include_router(crowd_router, prefix="/api/crowd", tags=["Crowd"])
+app.include_router(transport_router, prefix="/api/transport", tags=["Transport"])
 app.include_router(sustainability_router, prefix="/api/sustainability", tags=["Sustainability"])
-app.include_router(decision_router,     prefix="/api/decision",       tags=["Decision"])
-app.include_router(match_router,        prefix="/api/match",          tags=["Match"])
-app.include_router(ws_router,           prefix="/ws",                 tags=["WebSocket"])
+app.include_router(decision_router, prefix="/api/decision", tags=["Decision"])
+app.include_router(match_router, prefix="/api/match", tags=["Match"])
+app.include_router(ws_router, prefix="/ws", tags=["WebSocket"])
+
 
 @app.get("/")
 def read_root() -> dict[str, str]:
@@ -253,8 +252,9 @@ def read_root() -> dict[str, str]:
         "status": "online",
         "system": "FIFA WC 2026 Stadium Operations Core",
         "version": "2.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 @app.get("/health")
 def health_check() -> dict[str, str]:

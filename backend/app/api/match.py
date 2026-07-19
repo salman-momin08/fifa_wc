@@ -17,7 +17,6 @@ from app.core.constants import (
     DEFAULT_MATCH_MINUTE,
 )
 from app.database import MatchCenter, MatchFixture, get_db
-from app.repositories.stadium import StadiumRepository
 from app.schemas.match import MatchCenterOut, MatchFixtureOut, MatchUpdateReq
 from app.services.match_simulator import MatchSimulator
 from app.api.ws import manager
