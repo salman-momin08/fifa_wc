@@ -133,20 +133,21 @@ export default function Header({ activeRole, setActiveRole }) {
             </div>
           ) : (
             <button className={styles.loginTriggerBtn} onClick={() => setShowLoginModal(true)}>
-              🔐 Sign In
+              🔐 Staff / Admin Login
             </button>
           )}
         </div>
       </div>
 
-      {/* JWT Login Modal */}
+      {/* JWT Login Modal for Staff and Organizers */}
       {showLoginModal && (
         <div className={styles.modalOverlay} onClick={() => setShowLoginModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>🔐 Authenticate via OAuth2 JWT</h3>
+              <h3>🔐 Staff & Organizer Command Login</h3>
               <button className={styles.closeBtn} onClick={() => setShowLoginModal(false)}>✕</button>
             </div>
+
 
             <form onSubmit={handleFormSubmit} className={styles.loginForm}>
               {error && <div className={styles.errorBanner}>{error}</div>}
