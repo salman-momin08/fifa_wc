@@ -136,13 +136,13 @@ def init_db():
         # Seed Wayfinding Nodes (Official Verified Coordinates)
         if db.query(WayfindingNode).count() == 0:
             nodes = [
-                WayfindingNode(name="Gate A", zone="North Outer", has_wheelchair_ramp=True, has_elevator=True, restrooms_nearby=True, first_aid_nearby=True, coordinates_lat=45.4215, coordinates_lng=-75.6972),
-                WayfindingNode(name="Gate B", zone="East Outer", has_wheelchair_ramp=True, has_elevator=False, restrooms_nearby=True, first_aid_nearby=False, coordinates_lat=45.4218, coordinates_lng=-75.6968),
-                WayfindingNode(name="Gate C", zone="South Outer", has_wheelchair_ramp=False, has_elevator=False, restrooms_nearby=False, first_aid_nearby=False, coordinates_lat=45.4222, coordinates_lng=-75.6980),
-                WayfindingNode(name="Transit Plaza", zone="South Outer", has_wheelchair_ramp=True, has_elevator=False, restrooms_nearby=True, first_aid_nearby=False, coordinates_lat=45.4200, coordinates_lng=-75.6950),
-                WayfindingNode(name="Concourse West", zone="Inner Circle", has_wheelchair_ramp=True, has_elevator=True, restrooms_nearby=True, first_aid_nearby=True, coordinates_lat=45.4210, coordinates_lng=-75.7000),
-                WayfindingNode(name="Concourse East", zone="Inner Circle", has_wheelchair_ramp=True, has_elevator=True, restrooms_nearby=True, first_aid_nearby=False, coordinates_lat=45.4230, coordinates_lng=-75.6940),
-                WayfindingNode(name="South Stand", zone="Grandstand", has_wheelchair_ramp=False, has_elevator=False, restrooms_nearby=True, first_aid_nearby=False, coordinates_lat=45.4190, coordinates_lng=-75.6970),
+                WayfindingNode(name="Gate A", zone="North Outer", has_wheelchair_ramp=True, has_elevator=True, restroom_nearby=True, first_aid_nearby=True, coordinates_lat=45.4215, coordinates_lng=-75.6972),
+                WayfindingNode(name="Gate B", zone="East Outer", has_wheelchair_ramp=True, has_elevator=False, restroom_nearby=True, first_aid_nearby=False, coordinates_lat=45.4218, coordinates_lng=-75.6968),
+                WayfindingNode(name="Gate C", zone="South Outer", has_wheelchair_ramp=False, has_elevator=False, restroom_nearby=False, first_aid_nearby=False, coordinates_lat=45.4222, coordinates_lng=-75.6980),
+                WayfindingNode(name="Transit Plaza", zone="South Outer", has_wheelchair_ramp=True, has_elevator=False, restroom_nearby=True, first_aid_nearby=False, coordinates_lat=45.4200, coordinates_lng=-75.6950),
+                WayfindingNode(name="Concourse West", zone="Inner Circle", has_wheelchair_ramp=True, has_elevator=True, restroom_nearby=True, first_aid_nearby=True, coordinates_lat=45.4210, coordinates_lng=-75.7000),
+                WayfindingNode(name="Concourse East", zone="Inner Circle", has_wheelchair_ramp=True, has_elevator=True, restroom_nearby=True, first_aid_nearby=False, coordinates_lat=45.4230, coordinates_lng=-75.6940),
+                WayfindingNode(name="South Stand", zone="Grandstand", has_wheelchair_ramp=False, has_elevator=False, restroom_nearby=True, first_aid_nearby=False, coordinates_lat=45.4190, coordinates_lng=-75.6970),
             ]
             db.bulk_save_objects(nodes)
             

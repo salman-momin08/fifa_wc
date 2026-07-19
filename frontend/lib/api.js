@@ -1,97 +1,152 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+/**
+ * Centralized API client for the FIFA WC 2026 Stadium Operations backend.
+ *
+ * Features:
+ * - AbortController timeout (5s) on every fetch to prevent hang under stadium load
+ * - Authorization header injection for RBAC-protected endpoints
+ * - Offline-mode fallback data for all endpoints
+ * - Graceful error degradation with console warnings (never crashes UI)
+ */
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+const REQUEST_TIMEOUT_MS = 5000;
+
+/** Pre-seeded offline coordinate map anchored to wayfinding_nodes DB records. */
 const mockDB = {
   nodes: {
-    "Gate A": { coords: "45.4215, -75.6972", features: "wheelchair ramp, elevator, restroom, first-aid station" },
-    "Gate B": { coords: "45.4218, -75.6968", features: "wheelchair ramp, restroom" },
-    "Gate C": { coords: "45.4222, -75.6980", features: "escalator, restroom" },
-    "Transit Plaza": { coords: "45.4200, -75.6950", features: "wheelchair ramp, bus transfer bay" },
-    "Concourse West": { coords: "45.4210, -75.7000", features: "wheelchair ramp, elevator, water refill point" }
-  }
+    'Gate A': { coords: '45.4215, -75.6972', features: 'wheelchair ramp, elevator, restroom, first-aid station' },
+    'Gate B': { coords: '45.4218, -75.6968', features: 'wheelchair ramp, restroom' },
+    'Gate C': { coords: '45.4222, -75.6980', features: 'escalator, restroom' },
+    'Transit Plaza': { coords: '45.4200, -75.6950', features: 'wheelchair ramp, bus transfer bay' },
+    'Concourse West': { coords: '45.4210, -75.7000', features: 'wheelchair ramp, elevator, water refill point' },
+  },
 };
+
+/**
+ * Fetch wrapper with AbortController timeout.
+ * @param {string} url - Request URL
+ * @param {RequestInit} [options] - Fetch options
+ * @param {number} [timeoutMs] - Timeout in milliseconds (default 5000)
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Build Authorization headers using the stored JWT access token.
+ * @returns {Record<string, string>} Headers object with Bearer token if available.
+ */
+function getAuthHeaders() {
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('fifa_access_token') || localStorage.getItem('access_token')
+      : null;
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+// ── Transit Status ────────────────────────────────────────────────────────────
 
 export async function fetchTransitStatus(offlineMode) {
   if (offlineMode) {
     return [
       { route: 'Metro Line Red', status: 'normal', delay_minutes: 0 },
       { route: 'Shuttle Route 101', status: 'delayed', delay_minutes: 15 },
-      { route: 'West Parking Express', status: 'normal', delay_minutes: 0 }
+      { route: 'West Parking Express', status: 'normal', delay_minutes: 0 },
     ];
   }
   try {
-    const res = await fetch(`${API_BASE}/transport/status`);
+    const res = await fetchWithTimeout(`${API_BASE}/transport/status`);
     if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn("Backend offline, utilizing transit fallback.");
+  } catch {
+    console.warn('Backend offline, utilizing transit fallback.');
   }
   return [
     { route: 'Metro Line Red (Offline)', status: 'normal', delay_minutes: 0 },
-    { route: 'Shuttle Route 101 (Offline)', status: 'delayed', delay_minutes: 15 }
+    { route: 'Shuttle Route 101 (Offline)', status: 'delayed', delay_minutes: 15 },
   ];
 }
+
+// ── Crowd Sensors ─────────────────────────────────────────────────────────────
 
 export async function fetchSensorsStatus(offlineMode) {
   if (offlineMode) {
     return [
       { zone: 'Gate A', density_percentage: 85, advisory: 'High density entry lines.' },
       { zone: 'Gate B', density_percentage: 45, advisory: 'Flowing smoothly.' },
-      { zone: 'Transit Plaza', density_percentage: 70, advisory: 'Steady queueing.' }
+      { zone: 'Transit Plaza', density_percentage: 70, advisory: 'Steady queueing.' },
     ];
   }
   try {
-    const res = await fetch(`${API_BASE}/crowd/status`);
+    const res = await fetchWithTimeout(`${API_BASE}/crowd/status`);
     if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn("Backend offline, utilizing sensors fallback.");
+  } catch {
+    console.warn('Backend offline, utilizing sensors fallback.');
   }
-  return [
-    { zone: 'Gate A (Offline)', density_percentage: 80, advisory: 'High flow warning.' }
-  ];
+  return [{ zone: 'Gate A (Offline)', density_percentage: 80, advisory: 'High flow warning.' }];
 }
+
+// ── Incidents ─────────────────────────────────────────────────────────────────
 
 export async function fetchIncidents(offlineMode) {
   if (offlineMode) {
     return [
       { id: 101, title: 'Scanner Issue Gate A', description: 'Scanner 3 not booting.', gate: 'Gate A', severity: 'medium', status: 'draft', suggested_action: 'Deploy manual scan crew.', is_approved: false },
-      { id: 102, title: 'Bus delay', description: 'Route 101 delay.', gate: 'Transit Plaza', severity: 'low', status: 'active', suggested_action: 'Broadcast warning to fans.', is_approved: true }
+      { id: 102, title: 'Bus delay', description: 'Route 101 delay.', gate: 'Transit Plaza', severity: 'low', status: 'active', suggested_action: 'Broadcast warning to fans.', is_approved: true },
     ];
   }
   try {
-    const res = await fetch(`${API_BASE}/decision/list`);
+    const res = await fetchWithTimeout(`${API_BASE}/decision/list`);
     if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn("Backend offline, utilizing incidents fallback.");
+  } catch {
+    console.warn('Backend offline, utilizing incidents fallback.');
   }
   return [
-    { id: 999, title: 'Network Warning (Offline)', description: 'FastAPI Operations Command center is currently offline.', gate: 'Stadium', severity: 'low', status: 'active', suggested_action: 'Perform manual reports.', is_approved: true }
+    { id: 999, title: 'Network Warning (Offline)', description: 'FastAPI Operations Command center is currently offline.', gate: 'Stadium', severity: 'low', status: 'active', suggested_action: 'Perform manual reports.', is_approved: true },
   ];
 }
 
+// ── Sustainability Nudge ──────────────────────────────────────────────────────
+
 export async function fetchSustainabilityNudge(gate, lang, offlineMode) {
   if (offlineMode) {
-    const details = mockDB.nodes[gate] || { features: "General recycling bins." };
+    const details = mockDB.nodes[gate] || { features: 'General recycling bins.' };
     return `[Offline Safe Mode] Sustainability tip: Water refilling and ${details.features} are fully active at ${gate}. Bring your reusable flask!`;
   }
   try {
-    const res = await fetch(`${API_BASE}/sustainability/nudge?gate=${encodeURIComponent(gate)}&lang=${lang}`);
+    const res = await fetchWithTimeout(
+      `${API_BASE}/sustainability/nudge?gate=${encodeURIComponent(gate)}&lang=${lang}`
+    );
     if (res.ok) {
       const data = await res.json();
       return data.nudge;
     }
-  } catch (e) {
-    console.warn("Backend offline, utilizing sustainability nudge fallback.");
+  } catch {
+    console.warn('Backend offline, utilizing sustainability nudge fallback.');
   }
   return `Help us reduce plastic waste! Find water refilling points inside ${gate}.`;
 }
 
+// ── AI Assistant ──────────────────────────────────────────────────────────────
+
 export async function queryAssistantAPI(queryText, lang, offlineMode) {
   if (offlineMode) {
-    let reply = "I am operating in Offline Guide Mode. ";
+    let reply = 'I am operating in Offline Guide Mode. ';
     const queryLower = queryText.toLowerCase();
-    
+
     let foundStart = null;
     let foundEnd = null;
-    Object.keys(mockDB.nodes).forEach(k => {
+    Object.keys(mockDB.nodes).forEach((k) => {
       if (queryLower.includes(k.toLowerCase())) {
         if (!foundStart) foundStart = k;
         else foundEnd = k;
@@ -109,98 +164,103 @@ export async function queryAssistantAPI(queryText, lang, offlineMode) {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/assistant/query`, {
+    const res = await fetchWithTimeout(`${API_BASE}/assistant/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: queryText, lang })
+      body: JSON.stringify({ query: queryText, lang }),
     });
     if (res.ok) {
       const data = await res.json();
       return data.response;
     }
-  } catch (e) {
-    console.warn("Backend offline, assistant query fallback.");
+  } catch {
+    console.warn('Backend offline, assistant query fallback.');
   }
   return 'Offline backup: Proceed to Concourse West to access main restrooms.';
 }
 
+// ── Incident Report (Staff) ───────────────────────────────────────────────────
+
 export async function submitIncidentReport(payload) {
-  const res = await fetch(`${API_BASE}/decision/report`, {
+  const res = await fetchWithTimeout(`${API_BASE}/decision/report`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   if (res.ok) return await res.json();
-  throw new Error("Failed to report incident");
+  throw new Error('Failed to report incident');
 }
+
+// ── Crowd Sensor Update ───────────────────────────────────────────────────────
 
 export async function submitSensorUpdate(payload) {
-  const res = await fetch(`${API_BASE}/crowd/update`, {
+  const res = await fetchWithTimeout(`${API_BASE}/crowd/update`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   if (res.ok) return await res.json();
-  throw new Error("Failed to update sensor");
+  throw new Error('Failed to update sensor');
 }
 
+// ── Incident Approval (Organizer — RBAC protected) ────────────────────────────
+
+/**
+ * Approve and broadcast a safety incident.
+ * Requires an organizer or admin JWT token stored in localStorage.
+ *
+ * @param {number} id - Incident ID to approve
+ * @param {string|null} customAction - Optional override action plan text
+ * @returns {Promise<object>} Approved incident data
+ * @throws {Error} If the request fails or returns non-OK status
+ */
 export async function approveIncidentBroadcast(id, customAction) {
-  const res = await fetch(`${API_BASE}/decision/approve`, {
+  const res = await fetchWithTimeout(`${API_BASE}/decision/approve`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ incident_id: id, custom_action: customAction })
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ incident_id: id, custom_action: customAction }),
   });
   if (res.ok) return await res.json();
-  throw new Error("Failed to approve incident");
+  const errData = await res.json().catch(() => ({}));
+  throw new Error(errData.detail || 'Failed to approve incident');
 }
+
+// ── Match Telemetry ───────────────────────────────────────────────────────────
+
+/** @type {object} Default offline match telemetry data */
+const OFFLINE_MATCH_DATA = {
+  home_team: 'CANADA', home_flag: '🇨🇦', home_score: 2,
+  away_team: 'USA', away_flag: '🇺🇸', away_score: 1,
+  match_minute: "76'", is_live: true,
+  possession_home: 52, possession_away: 48,
+  shots_home: 12, shots_away: 9,
+  pass_accuracy_home: 85, pass_accuracy_away: 81,
+  attendance: '68,243', stadium_capacity_pct: 92.4,
+};
 
 export async function fetchLiveMatch(offlineMode) {
-  if (offlineMode) {
-    return {
-      home_team: "CANADA", home_flag: "🇨🇦", home_score: 2,
-      away_team: "USA", away_flag: "🇺🇸", away_score: 1,
-      match_minute: "76th Minute", is_live: true,
-      possession_home: 52, possession_away: 48,
-      shots_home: 12, shots_away: 9,
-      pass_accuracy_home: 85, pass_accuracy_away: 81,
-      attendance: "68,243", stadium_capacity_pct: 92.4
-    };
-  }
+  if (offlineMode) return OFFLINE_MATCH_DATA;
   try {
-    const res = await fetch(`${API_BASE}/match/live`);
+    const res = await fetchWithTimeout(`${API_BASE}/match/live`);
     if (res.ok) return await res.json();
   } catch {
-    // Offline fallback
+    // Offline fallback below
   }
-  return {
-    home_team: "CANADA", home_flag: "🇨🇦", home_score: 2,
-    away_team: "USA", away_flag: "🇺🇸", away_score: 1,
-    match_minute: "76th Minute", is_live: true,
-    possession_home: 52, possession_away: 48,
-    shots_home: 12, shots_away: 9,
-    pass_accuracy_home: 85, pass_accuracy_away: 81,
-    attendance: "68,243", stadium_capacity_pct: 92.4
-  };
+  return OFFLINE_MATCH_DATA;
 }
 
 export async function fetchMatchFixtures(offlineMode) {
-  if (offlineMode) {
-    return [
-      { id: 1, date_label: "Tomorrow - 18:00 Local", teams: "🇲🇽 Mexico vs 🇦🇷 Argentina", stage: "Matchday 2 - Group Stage" },
-      { id: 2, date_label: "July 16 - 20:00 Local", teams: "🇫🇷 France vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", stage: "Matchday 3 - Group Stage" },
-      { id: 3, date_label: "July 18 - 17:00 Local", teams: "🇧🇷 Brazil vs 🇪🇸 Spain", stage: "Round of 32" }
-    ];
-  }
+  const OFFLINE_FIXTURES = [
+    { id: 1, date_label: 'Tomorrow - 18:00 Local', teams: '🇲🇽 Mexico vs 🇦🇷 Argentina', stage: 'Matchday 2 - Group Stage' },
+    { id: 2, date_label: 'July 16 - 20:00 Local', teams: '🇫🇷 France vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 England', stage: 'Matchday 3 - Group Stage' },
+    { id: 3, date_label: 'July 18 - 17:00 Local', teams: '🇧🇷 Brazil vs 🇪🇸 Spain', stage: 'Round of 32' },
+  ];
+  if (offlineMode) return OFFLINE_FIXTURES;
   try {
-    const res = await fetch(`${API_BASE}/match/fixtures`);
+    const res = await fetchWithTimeout(`${API_BASE}/match/fixtures`);
     if (res.ok) return await res.json();
   } catch {
-    // Offline fallback
+    // Offline fallback below
   }
-  return [
-    { id: 1, date_label: "Tomorrow - 18:00 Local", teams: "🇲🇽 Mexico vs 🇦🇷 Argentina", stage: "Matchday 2 - Group Stage" },
-    { id: 2, date_label: "July 16 - 20:00 Local", teams: "🇫🇷 France vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", stage: "Matchday 3 - Group Stage" },
-    { id: 3, date_label: "July 18 - 17:00 Local", teams: "🇧🇷 Brazil vs 🇪🇸 Spain", stage: "Round of 32" }
-  ];
+  return OFFLINE_FIXTURES;
 }
-

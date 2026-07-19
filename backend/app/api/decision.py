@@ -1,5 +1,15 @@
+"""
+Safety Decision Support Copilot Router.
+
+Implements a human-in-the-loop (HITL) safety incident management system.
+Field volunteers submit incident reports (DRAFT status); organizers review
+AI-generated SOP response plans and approve broadcasts via RBAC-protected endpoints.
+"""
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from app.database import get_db, Incident
 from app.schemas.incident import IncidentReport, IncidentApproval, IncidentOut
 from app.repositories.stadium import StadiumRepository
@@ -130,13 +140,14 @@ async def approve_incident(
         "gate": incident.gate,
         "severity": incident.severity,
         "action_plan": incident.suggested_action,
-        "approved_by": current_user.username
+        "approved_by": current_user.username,
     })
-    
+
     return {
         "message": "Incident approved and broadcasted to staff and fans.",
         "incident_id": incident.id,
         "status": incident.status,
+        "is_approved": incident.is_approved,
         "action_plan": incident.suggested_action,
-        "approved_by": current_user.username
+        "approved_by": current_user.username,
     }

@@ -76,40 +76,86 @@ export default function FanPortal({ offlineMode, transitStatuses, incidentsList,
         <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', background: 'rgba(255,255,255,0.01)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--glass-border)'}}>
           <h3 style={{fontSize: '0.9rem', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Match Stats</h3>
           
+          {/* Ball Possession — dynamic from live matchData */}
           <div>
             <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem'}}>
               <span>{matchData?.possession_home ?? 52}%</span>
               <span style={{color: 'var(--color-text-muted)'}}>Ball Possession</span>
               <span>{matchData?.possession_away ?? 48}%</span>
             </div>
-            <div style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}>
+            <div
+              role="progressbar"
+              aria-label="Ball possession"
+              aria-valuenow={matchData?.possession_home ?? 52}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}
+            >
               <div style={{width: `${matchData?.possession_home ?? 52}%`, background: 'var(--color-secondary)'}} />
               <div style={{width: `${matchData?.possession_away ?? 48}%`, background: 'rgba(255,255,255,0.1)'}} />
             </div>
           </div>
 
+          {/* Shots on Goal — dynamic widths computed from live data */}
           <div>
-            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem'}}>
-              <span>{matchData?.shots_home ?? 12}</span>
-              <span style={{color: 'var(--color-text-muted)'}}>Shots on Goal</span>
-              <span>{matchData?.shots_away ?? 9}</span>
-            </div>
-            <div style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}>
-              <div style={{width: '57%', background: 'var(--color-secondary)'}} />
-              <div style={{width: '43%', background: 'rgba(255,255,255,0.1)'}} />
-            </div>
+            {(() => {
+              const sh = matchData?.shots_home ?? 12;
+              const sa = matchData?.shots_away ?? 9;
+              const total = sh + sa || 1;
+              const homePct = Math.round((sh / total) * 100);
+              const awayPct = 100 - homePct;
+              return (
+                <>
+                  <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem'}}>
+                    <span>{sh}</span>
+                    <span style={{color: 'var(--color-text-muted)'}}>Shots on Goal</span>
+                    <span>{sa}</span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label={`Shots on goal: ${sh} home vs ${sa} away`}
+                    aria-valuenow={homePct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}
+                  >
+                    <div style={{width: `${homePct}%`, background: 'var(--color-secondary)'}} />
+                    <div style={{width: `${awayPct}%`, background: 'rgba(255,255,255,0.1)'}} />
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
+          {/* Pass Accuracy — dynamic widths computed from live data */}
           <div>
-            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem'}}>
-              <span>{matchData?.pass_accuracy_home ?? 85}%</span>
-              <span style={{color: 'var(--color-text-muted)'}}>Pass Accuracy</span>
-              <span>{matchData?.pass_accuracy_away ?? 81}%</span>
-            </div>
-            <div style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}>
-              <div style={{width: '85%', background: 'var(--color-secondary)'}} />
-              <div style={{width: '15%', background: 'rgba(255,255,255,0.1)'}} />
-            </div>
+            {(() => {
+              const ph = matchData?.pass_accuracy_home ?? 85;
+              const pa = matchData?.pass_accuracy_away ?? 81;
+              const total = ph + pa || 1;
+              const homePct = Math.round((ph / total) * 100);
+              const awayPct = 100 - homePct;
+              return (
+                <>
+                  <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem'}}>
+                    <span>{ph}%</span>
+                    <span style={{color: 'var(--color-text-muted)'}}>Pass Accuracy</span>
+                    <span>{pa}%</span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label={`Pass accuracy: ${ph}% home vs ${pa}% away`}
+                    aria-valuenow={homePct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    style={{height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', display: 'flex', overflow: 'hidden'}}
+                  >
+                    <div style={{width: `${homePct}%`, background: 'var(--color-secondary)'}} />
+                    <div style={{width: `${awayPct}%`, background: 'rgba(255,255,255,0.1)'}} />
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -175,13 +221,13 @@ export default function FanPortal({ offlineMode, transitStatuses, incidentsList,
             {transitStatuses.length === 0 ? (
               <p style={{color: 'var(--color-text-muted)', fontSize: '0.9rem'}}>No delays reported on transit lanes.</p>
             ) : (
-              transitStatuses.map((t, idx) => (
-                <div key={idx} className="list-item">
+              transitStatuses.map((t) => (
+                <div key={t.route} className="list-item">
                   <div>
                     <div style={{fontWeight: 600}}>{t.route}</div>
-                    <div className="list-item-meta">Delay: {t.delay_minutes} min</div>
+                    <div className="list-item-meta">Delay: <strong>{t.delay_minutes}</strong> min</div>
                   </div>
-                  <span className={`status-pill ${t.status}`}>{t.status}</span>
+                  <span className={`status-pill ${t.status}`} aria-label={`Status: ${t.status}`}>{t.status}</span>
                 </div>
               ))
             )}

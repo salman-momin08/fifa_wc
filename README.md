@@ -1,179 +1,354 @@
-# FIFA World Cup 2026 - Stadium Operations & Fan Portal (v2.0 Enterprise Grade)
+<div align="center">
 
-A production-grade, enterprise-scale stadium operations command and fan experience platform designed for the FIFA World Cup 2026. This platform integrates Google Gemini AI (anchored with Retrieval-Augmented Generation and deterministic offline rule fallbacks) alongside a real-time **MatchSimulator Engine**, Dijkstra pathfinding, predictive crowd analytics, WebSockets real-time sync, and human-in-the-loop safety command workflows.
+# ⚽ FIFA World Cup 2026 — Smart Stadium Operations & Fan Experience Platform
+
+### Challenge 4: Smart Stadiums & Tournament Operations
+
+[![Challenge Vertical](https://img.shields.io/badge/Challenge-Smart%20Stadiums%20%26%20Tournament%20Ops-green?style=for-the-badge)](https://github.com)
+[![Built With](https://img.shields.io/badge/AI-Google%20Gemini%20RAG-blue?style=for-the-badge)](https://ai.google.dev)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%202.0-009688?style=for-the-badge)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black?style=for-the-badge)](https://nextjs.org)
+[![WCAG](https://img.shields.io/badge/Accessibility-WCAG%202.2%20AA-purple?style=for-the-badge)](https://www.w3.org/WAI/WCAG22)
+
+</div>
 
 ---
 
-## 🏛️ System Architecture & Layered Design
+## 🎯 Challenge Overview
 
-The codebase follows **Clean Architecture** principles to separate concerns into distinct, testable layers:
+**Challenge 4** requires a GenAI-enabled solution that enhances **stadium operations and the tournament experience** for fans, organizers, volunteers, and venue staff during the FIFA World Cup 2026.
 
-```text
-[ React Next.js PWA Client ] <── WebSockets / REST API ──> [ FastAPI Core ]
-                                                              │
-   ┌──────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────┐
-   │                                                    BACKEND LAYERS                                                   │
-   ├─────────────────────────────┬─────────────────────────────┬─────────────────────────────┬───────────────────────────┤
-   │       API ROUTERS           │       SERVICE LAYER         │      REPOSITORY LAYER       │      DATABASE LAYER       │
-   │  (app/api/)                 │  (app/services/)            │  (app/repositories/)        │  (app/database.py)        │
-   │  - auth.py                  │  - ai_safety.py             │  - stadium.py               │  - User                   │
-   │  - assistant.py             │  - match_simulator.py       │    (Encapsulates DB calls   │  - Incident               │
-   │  - crowd.py                 │  - route_optimizer.py       │     for nodes, SOPs,        │  - CrowdSensor            │
-   │  - transport.py             │  - analytics.py             │     sensors, alerts, &      │  - TransitAlert           │
-   │  - decision.py              │  - sustainability.py        │     user accounts)          │  - WayfindingNode         │
-   │  - sustainability.py        │  - llm.py                   │                             │  - MatchCenter            │
-   │  - match.py                 │                             │                             │  - MatchFixture           │
-   │  - ws.py                    │                             │                             │                           │
-   └─────────────────────────────┴─────────────────────────────┴─────────────────────────────┴───────────────────────────┘
+This platform directly addresses **every required problem statement vertical**:
+
+| Problem Statement Vertical | Implementation |
+|---|---|
+| 🗺️ **Navigation** | Dijkstra multi-criteria pathfinder with step-free accessible routing |
+| 👥 **Crowd Management** | Real-time predictive density analytics with 15/30/60-minute forecasts |
+| ♿ **Accessibility** | WCAG 2.2 AA+, TTS voice navigation, wheelchair-optimized routing |
+| 🚌 **Transportation** | Live transit feed aggregator with AI-generated multilingual advisories |
+| 🌱 **Sustainability** | Green impact calculator, gamified badges, location-aware eco nudges |
+| 🌍 **Multilingual Assistance** | 5-language AI assistant (EN, ES, FR, AR, PT) with RAG grounding |
+| 📊 **Operational Intelligence** | Async briefing engine, Prometheus metrics, Sentry error tracking |
+| ⚡ **Real-Time Decision Support** | Human-in-the-loop safety copilot with RBAC incident approval workflow |
+
+---
+
+## 🧠 Approach & Architecture
+
+### Chosen Approach: Clean Architecture + RAG-Grounded GenAI
+
+The system is structured around three core principles:
+
+1. **Grounded AI over Hallucination** — Every LLM call is anchored to verified database records. AI output is checked by `verify_output_grounding()` before serving fans.
+2. **Human-in-the-Loop Safety** — Incidents are drafted by field staff, AI suggests responses, but **only authorized organizers** can broadcast approvals.
+3. **Graceful Degradation** — When AI/network fails, the system falls back to pre-cached SOPs, rule-based translations, and offline PWA mode.
+
+```
+[ React Next.js 15 PWA ] <─── WebSocket / REST ───> [ FastAPI 2.0 Core ]
+                                                             │
+         ┌───────────────────────────────────────────────────┤
+         │                 BACKEND LAYERS                    │
+         ├────────────────┬───────────────┬──────────────────┤
+         │  API ROUTERS   │ SERVICE LAYER │ REPOSITORY LAYER │
+         │  app/api/      │ app/services/ │ app/repositories/│
+         │  ─ auth.py     │ ─ llm.py      │ ─ stadium.py     │
+         │  ─ assistant.py│ ─ ai_safety.py│   (all DB calls) │
+         │  ─ crowd.py    │ ─ analytics.py│                  │
+         │  ─ transport.py│ ─ route_opt.. │  DATABASE LAYER  │
+         │  ─ decision.py │ ─ sustain..   │  app/database.py │
+         │  ─ match.py    │ ─ match_sim.. │  SQLAlchemy ORM  │
+         │  ─ ws.py       │               │  SQLite/Postgres  │
+         └────────────────┴───────────────┴──────────────────┘
 ```
 
 ---
 
-## 🧩 Detailed Feature Deep Dive: How Each Module Works
+## 🧩 Feature Modules (Problem Statement Alignment)
 
-### 1. Conversational Multilingual Assistant & Wayfinder (F-01)
-* **Purpose**: Provides fans with instant navigation instructions, accessibility directions, and stadium answers in 5 languages (English, Spanish, French, Arabic, Portuguese).
-* **How It Works**:
-  1. **PII Scrubbing**: Sanitizes input query using regex filters to redact phone numbers, email addresses, credit cards, and ticket serial numbers (`TKT-XXXX`).
-  2. **Prompt Injection Censorship**: Scans for hijack keywords (`ignore previous instructions`, `system prompt`) and blocks malicious prompts before AI execution.
-  3. **RAG Context Retrieval**: Queries `wayfinding_nodes`, `transit_alerts`, `crowd_sensors`, and `sop_rules` tables to retrieve matching context.
-  4. **Dijkstra Pathfinding Integration**: If the query asks for directions (e.g. *"How to go from Transit Plaza to Gate B"*), the request is passed to `RouteOptimizer` to compute exact routing, transit modes, and ETAs.
-  5. **LLM Execution & Verification**: Calls Google Gemini API (`gemini-1.5-flash`). The generated output is parsed by `verify_output_grounding()` to cross-reference location names against database node records. If unverified locations are detected, the confidence score drops and a safe fallback response is returned.
-  6. **UI Persistence**: Chat sessions are stored in `localStorage` so chat histories, renamed titles, and messages persist across browser reloads.
+### 1. 🗺️ Conversational Multilingual Assistant & Navigation (Navigation + Multilingual)
 
-### 2. Crowd Flow Intelligence & Predictive Analytics (F-02)
-* **Purpose**: Monitors real-time crowd density percentages (0% to 100%) across stadium gates and generates 15, 30, and 60-minute predictive forecasts.
-* **How It Works**:
-  1. **Sensor Telemetry Ingestion**: Accepts zone density updates via `POST /api/crowd/update`.
-  2. **Predictive Analytics Engine (`analytics.py`)**: Uses a linear-rate differential flow model (`current_density + (entry_rate - exit_rate) * delta_t`) to compute future density levels at 15m, 30m, and 60m intervals.
-  3. **Advisory Generation**: Categorizes density into *Low* (<50%), *Moderate* (50-80%), and *High/Critical* (>80%), generating automated plain-language advisories.
-  4. **Real-Time Push**: Broadcasts updated sensor data over WebSockets (`/ws/updates`) to instantly update the *Organizer Dashboard*.
+**What it solves**: Fans from 200+ nations need instant navigation in their native language.
 
-### 3. Accessible Navigation Engine (F-03)
-* **Purpose**: Ensures wheelchair users and spectators with limited mobility receive step-free routes checking ramps, elevators, and escalators.
-* **How It Works**:
-  1. **Graph Construction**: Builds an edge graph from physical stadium precinct waypoints (`wayfinding_nodes`).
-  2. **Dijkstra Optimization (`route_optimizer.py`)**: Calculates shortest path while applying weight penalties to non-accessible nodes (stairs, high-density crowds).
-  3. **Multi-Criteria Optimization**: Supports 4 routing preferences:
-     - **Fastest**: Minimizes transit time.
-     - **Safest**: Avoids high-density crowd zones and active incident gates.
-     - **Accessible**: Restricts path exclusively to nodes with `has_wheelchair_ramp=True` or `has_elevator=True`.
-     - **Least Crowded**: Prioritizes routes passing through low-density zones.
+**Implementation**:
+- **PII Scrubbing** — Redacts phone numbers, emails, credit cards (`TKT-XXXX`) before any AI call.
+- **Prompt Injection Defense** — Scans for `ignore previous instructions`, `system prompt` patterns and blocks them before LLM invocation.
+- **RAG Context Retrieval** — Queries `wayfinding_nodes`, `transit_alerts`, `crowd_sensors`, `sop_rules` tables to ground the AI response.
+- **Dijkstra Pathfinder Integration** — Routes computed programmatically; result injected into the LLM context so AI explains a *verified* path.
+- **Output Grounding Verification** — `verify_output_grounding()` cross-references any location name in the AI response against the DB. Unverified locations are corrected or response confidence drops.
+- **Fail-Safe Fallback** — If Gemini API fails or confidence < 0.60, returns a pre-cached offline response with known SOP data.
+- **Languages**: English (en), Spanish (es), French (fr), Arabic (ar), Portuguese (pt).
 
-### 4. Transport Coordination Assistant (F-04)
-* **Purpose**: Aggregates transit feed bulletins (Subway/Metro, Shuttle Buses, Parking Express) and alerts fans to delays or service suspensions.
-* **How It Works**:
-  1. Stores transit status logs in the `transit_alerts` table.
-  2. Offers dynamic multilingual translation (`translate_fallback()`) into target fan languages.
-  3. Pushes live transit status changes instantly to connected UI clients over WebSockets.
-
-### 5. Sustainability & Gamification Engine (F-05)
-* **Purpose**: Encourages eco-friendly fan behavior (water refills, recycling, public transit) through location-based nudges and impact tracking.
-* **How It Works**:
-  1. **Location-Aware Nudges**: Fetches nearest water refill stations, recycling bins, and EV shuttle bays relative to the fan's selected gate.
-  2. **Impact Calculation (`sustainability.py`)**: Computes personalized metrics:
-     - Plastic saved: `25 grams` per refill.
-     - CO₂ reduction: `1,200 grams` per public transit trip.
-     - Green Score: Weighted formula based on total eco-actions.
-  3. **Gamification Badges**: Unlocks virtual badges (*Hydration Hero*, *Zero Waste Champion*, *Eco Traveler*) as fans log sustainable actions.
-
-### 6. Operational Intelligence Briefing Engine (F-06)
-* **Purpose**: Provides stadium organizers with dynamic executive summaries compiled from multi-source telemetry feeds.
-* **How It Works**:
-  1. **Async Celery Task (`tasks.py`)**: Offloads heavy aggregation processing from the main thread.
-  2. Summarizes active incidents, draft SOP approvals, crowd bottlenecks, and transit delays into a concise operational briefing.
-
-### 7. Real-Time Safety Decision Support Copilot (F-07)
-* **Purpose**: Enables field staff to report incidents and provides organizers with AI-suggested SOP response plans before public broadcast.
-* **How It Works**:
-  1. **Draft Logging**: Field staff submit reports via `POST /api/decision/report`. Incidents start in `DRAFT` status and are **not** visible to fans.
-  2. **SOP Matching**: RAG pipeline matches incident scenario descriptions against official database guidelines (`sop_rules`).
-  3. **RBAC Restricted Approval**: Organizers review, edit, or authorize the action plan via `POST /api/decision/approve` (protected by `RoleChecker(["organizer", "admin"])`).
-  4. **Live Broadcast**: Upon approval, status changes to `active`, and the plan is broadcasted via WebSockets to the public *Active Safety Broadcast Channel*.
-
-### 8. Real-Time Dynamic Match Telemetry Engine
-* **Purpose**: Simulates live match statistics (ticking minutes, possession %, shots, pass accuracy, stadium capacity) in real-time.
-* **How It Works**:
-  1. **MatchSimulator Service (`match_simulator.py`)**: Uses system clock interval seeds to compute smooth, dynamic match minutes (`76'`, `77'`, `78'`, ..., `90+2'`).
-  2. **Dynamic Fluctuation**: Possession percentages, shots on goal, and capacity stats fluctuate realistically every 5 seconds.
-  3. **Auto-Ticker UI**: The *Fan Portal* polls `/api/match/live` every 5 seconds to update the live match center without page refreshes.
+**Files**: `backend/app/api/assistant.py`, `backend/app/services/llm.py`, `backend/app/services/ai_safety.py`
 
 ---
 
-## 🔒 Security & Safety Controls
+### 2. 👥 Crowd Flow Intelligence & Predictive Analytics (Crowd Management)
 
-| Safeguard | Implementation File | Function |
+**What it solves**: Stadiums hosting 68,000+ fans need proactive congestion prevention.
+
+**Implementation**:
+- **Sensor Telemetry Ingestion** — `POST /api/crowd/update` accepts zone density readings (0–100%).
+- **Predictive Analytics Engine** — `CrowdAnalyticsService` applies a differential flow model: `density + (entry_rate - exit_rate) × time` to compute 15m, 30m, and 60m density forecasts.
+- **Tiered Alerts** — Low (<50%), Moderate (50-80%), High/Critical (>80%) with plain-language operational advisories.
+- **AI-Generated Advisories** — Google Gemini generates dynamic coordinator notifications contextual to zone & density.
+- **Real-Time Push** — Density updates broadcast to Organizer Dashboard via WebSockets (`/ws/updates`).
+
+**Files**: `backend/app/api/crowd.py`, `backend/app/services/analytics.py`
+
+---
+
+### 3. ♿ Accessible Navigation Engine (Accessibility)
+
+**What it solves**: Spectators with mobility limitations need step-free, verifiable routes.
+
+**Implementation**:
+- **Graph Construction** — Stadium precinct waypoints (`wayfinding_nodes`) form a weighted graph.
+- **Dijkstra Multi-Criteria Optimizer** — `RouteOptimizer.find_optimal_route()` computes shortest path while filtering/penalizing non-accessible nodes.
+- **4 Routing Modes**:
+  - `fastest` — Minimizes transit time
+  - `safest` — Avoids high-density crowd zones
+  - `accessible` — Restricts path to nodes with `has_wheelchair_ramp=True` or `has_elevator=True`
+  - `least_crowded` — Prioritizes low-density zones
+- **WCAG 2.2 AA+ Frontend** — ARIA landmarks, live regions, keyboard navigation, high-contrast toggle, reduced motion support, TTS voice narration via Web Speech API.
+
+**Files**: `backend/app/services/route_optimizer.py`, `frontend/components/AIAssistant/`
+
+---
+
+### 4. 🚌 Transport Coordination Assistant (Transportation)
+
+**What it solves**: Fans must reach the stadium from multiple transit entry points — delays cause dangerous crowd surges.
+
+**Implementation**:
+- **Multi-Feed Aggregator** — Stores Subway/Metro, Shuttle Bus, and Parking Express status in `transit_alerts` table.
+- **AI Advisory Generator** — Gemini condenses raw delay data into spectator-friendly multilingual notifications.
+- **Real-Time Broadcast** — Transit updates pushed instantly to all connected fans via WebSockets.
+
+**Files**: `backend/app/api/transport.py`
+
+---
+
+### 5. 🌱 Sustainability & Gamification Engine (Sustainability)
+
+**What it solves**: FIFA's sustainability goals require engaging fans to reduce plastic waste and carbon emissions.
+
+**Implementation**:
+- **Location-Aware Nudges** — Maps gate location to nearest water refill station, recycling bin, and EV shuttle bay.
+- **Impact Calculator** — `SustainabilityService.calculate_green_impact()`:
+  - Plastic saved: `refills × 25g`
+  - CO₂ reduced: `2.6 kg` per public transit trip + `0.08 kg` per refill bottle avoided
+  - Green Score: weighted composite of eco-actions
+- **Gamification Badges** — Unlocks *Hydration Hero*, *Zero Waste Advocate*, *Green Transport Pioneer*, *Eco MVP*
+- **AI Nudge Generation** — Gemini crafts personalized 1-2 sentence encouragement per gate/language.
+
+**Files**: `backend/app/api/sustainability.py`, `backend/app/services/sustainability.py`
+
+---
+
+### 6. 📊 Operational Intelligence Briefing Engine (Operational Intelligence)
+
+**What it solves**: Command center staff need consolidated situational awareness across all feeds.
+
+**Implementation**:
+- **Async Celery Task** — `tasks.py` offloads heavy aggregation from the main thread using background workers.
+- **Multi-Source Aggregation** — Combines active incidents, draft SOP approvals, crowd bottlenecks, transit delays, and match telemetry.
+- **Prometheus Observability** — `fifa_http_requests_total` and `fifa_http_request_latency_seconds` metrics exposed at `/metrics`.
+- **Sentry Error Tracking** — Captures unhandled exceptions with FastAPI integration.
+- **Structured Logging** — Centralized JSON-format logger (`app/core/logging.py`) with request context.
+
+**Files**: `backend/app/tasks.py`, `backend/app/main.py`, `backend/app/core/logging.py`
+
+---
+
+### 7. ⚡ Real-Time Safety Decision Support Copilot (Decision Support)
+
+**What it solves**: Field staff need AI-assisted guidance; organizers need human oversight before public broadcasts.
+
+**Implementation**:
+- **DRAFT Logging** — Field volunteers submit reports via `POST /api/decision/report`. Incidents start as `DRAFT` — invisible to fans.
+- **RAG SOP Matching** — AI matches incident description against `sop_rules` table records for grounded action plans.
+- **Multi-Context Awareness** — Action plan incorporates crowd density, transit status, weather context, and historical gate incident count.
+- **RBAC-Protected Approval** — `POST /api/decision/approve` enforces `organizer` or `admin` role via `RoleChecker`.
+- **Live Broadcast** — On approval, status transitions to `active` and plan is pushed via WebSockets to Active Safety Broadcast Channel.
+
+**Files**: `backend/app/api/decision.py`, `backend/app/core/dependencies.py`
+
+---
+
+### 8. 📡 Real-Time Dynamic Match Telemetry Engine
+
+**What it solves**: Fans inside the stadium need a live synchronized scoreboard experience.
+
+**Implementation**:
+- **MatchSimulator** — Uses system clock intervals to generate smooth, consistent match minutes, possession %, shots, and pass accuracy.
+- **Seed Synchronization** — All clients share the same 5-second seed so state is synchronized across browsers.
+- **5-Second Auto-Ticker** — Fan Portal polls `/api/match/live` every 5 seconds for zero-page-refresh live updates.
+
+**Files**: `backend/app/services/match_simulator.py`, `backend/app/api/match.py`
+
+---
+
+## 🔒 Security Implementation
+
+| Control | Category | Implementation |
 |---|---|---|
-| **OAuth2 JWT Authentication** | `backend/app/core/security.py` | Issues 30-min access tokens & 7-day refresh tokens signed with HS256 algorithm |
-| **Role-Based Access Control (RBAC)** | `backend/app/core/dependencies.py` | Enforces role checks (`fan`, `volunteer`, `organizer`, `admin`) on sensitive endpoints |
-| **PII Scrubbing** | `backend/app/services/ai_safety.py` | Redacts phone numbers, emails, credit cards, and ticket serials |
-| **Prompt Injection Censorship** | `backend/app/services/ai_safety.py` | Rejects prompt hijacking patterns before AI invocation |
-| **SQL Injection Defense** | `backend/app/database.py` | Uses SQLAlchemy parameterized query bindings (`?` or `$param`) |
-| **Output Grounding Verification** | `backend/app/services/ai_safety.py` | Cross-references AI outputs against database node records to block hallucinations |
-| **OWASP Security Headers** | `backend/app/main.py` | Sets strict `CSP`, `HSTS`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` |
+| **OAuth2 JWT (HS256)** | Authentication | 30-min access + 7-day refresh tokens; `app/core/security.py` |
+| **Role-Based Access Control** | Authorization | `fan` / `volunteer` / `organizer` / `admin` roles enforced on all sensitive endpoints |
+| **PII Scrubbing** | Data Privacy | Regex redaction of phone numbers, emails, credit cards, ticket IDs before AI forwarding |
+| **Prompt Injection Defense** | AI Safety | Keyword blacklist scan on all user inputs before LLM invocation |
+| **SQL Parameterization** | Injection Prevention | SQLAlchemy ORM parameterized bindings — zero raw SQL string concatenation |
+| **Output Grounding Verification** | AI Hallucination | All AI responses cross-checked against DB node records before serving |
+| **OWASP Security Headers** | Transport Security | `HSTS`, `CSP`, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy` |
+| **Rate Limiting** | DDoS Mitigation | 60 req/min per IP (Redis-backed; in-memory fallback) |
+| **Sentry Error Tracking** | Observability | Production error capture with `send_default_pii=False` |
+| **Fail-Safe Fallbacks** | Resilience | Offline SOP dictionary + rule-based translations when AI/network fails |
 
 ---
 
-## ♿ Accessibility (WCAG 2.2 AA+) Features
+## ♿ Accessibility (WCAG 2.2 AA+)
 
-* **ARIA Landmarks & Live Regions**: Implements `<main id="main-content">`, `<nav>`, `<aside>`, `role="tabpanel"`, and `role="status"` with `aria-live="polite"` for screen reader announcements.
-* **Skip Navigation Link**: Accessible keyboard shortcut link (`.skip-nav`) visible on initial Tab key press.
-* **Keyboard Focus Visibility**: High-visibility `:focus-visible` offset outlines on all interactive buttons and inputs.
-* **Web Speech API Text-to-Speech**: Integrated TTS synthesis allowing fans to hear voice navigation steps.
-* **Reduced Motion & High Contrast**: Includes `@media (prefers-reduced-motion: reduce)` and color-blindness high contrast toggle mode (`.a11y-high-contrast`).
-
----
-
-## 📡 API Endpoints Reference
-
-| Category | Endpoint | Method | Request Payload / Params | Description |
-|---|---|---|---|---|
-| **Auth** | `/api/auth/token` | POST | `Form(username, password)` | Issue JWT access & refresh tokens |
-| **Auth** | `/api/auth/register` | POST | `JSON(username, password, role)` | Register new user account |
-| **Auth** | `/api/auth/me` | GET | `Bearer Token` | Fetch current user profile & role |
-| **Match** | `/api/match/live` | GET | None | Get real-time dynamic match telemetry |
-| **Match** | `/api/match/fixtures` | GET | None | Get upcoming stadium match fixtures |
-| **Match** | `/api/match/update` | POST | `JSON(home_score, away_score, ...)` | Update match score & broadcast update |
-| **Assistant**| `/api/assistant/query` | POST | `JSON(query, lang)` | Fan Q&A, RAG grounding & Dijkstra route |
-| **Crowd** | `/api/crowd/status` | GET | None | Current sensors & 15/30/60m density forecasts |
-| **Crowd** | `/api/crowd/update` | POST | `JSON(zone, density_percentage)` | Update sensor density & trigger alerts |
-| **Transport**| `/api/transport/status` | GET | None | Fetch transit alerts & delay summaries |
-| **Transport**| `/api/transport/update` | POST | `JSON(route, status, delay_minutes)` | Update transit feed & broadcast update |
-| **Sustain.** | `/api/sustainability/nudge`| GET | `?gate=Gate A&lang=en` | Get location-aware eco nudges & score |
-| **Decision** | `/api/decision/report` | POST | `JSON(title, description, gate, severity)` | Log safety incident (DRAFT status) |
-| **Decision** | `/api/decision/approve` | POST | `JSON(incident_id, custom_action)` | RBAC restricted incident approval |
-| **Decision** | `/api/decision/list` | GET | None | List active and draft incidents |
-| **WebSocket**| `/ws/updates` | WS | None | Real-time WebSocket push updates |
+| Feature | Implementation |
+|---|---|
+| **Semantic HTML Landmarks** | `<main id="main-content">`, `<nav>`, `<header>`, `<aside>`, `<article>` |
+| **ARIA Live Regions** | `role="status"`, `aria-live="polite"` on all dynamic content updates |
+| **ARIA Roles & Labels** | `role="tabpanel"`, `aria-labelledby`, `aria-selected` on all interactive tabs |
+| **Skip Navigation** | `.skip-nav` link activates on first `Tab` keypress |
+| **Keyboard Focus Visibility** | High-contrast `:focus-visible` outline on all buttons and inputs |
+| **Voice TTS Navigation** | Web Speech API synthesis reads out navigation step instructions |
+| **Reduced Motion** | `@media (prefers-reduced-motion: reduce)` disables all CSS animations |
+| **High Contrast Toggle** | `.a11y-high-contrast` mode available for visually impaired users |
+| **Color + Text Labels** | Density indicators always show text label (e.g., "High Density (85%)") not just color |
+| **Contrast Ratio** | Text meets ≥ 4.5:1 (normal) and ≥ 3:1 (large text) WCAG requirements |
 
 ---
 
-## 🛠️ Setup & Deployment Guide
+## 🧪 Testing
 
-### Option A: 1-Click Cloud Deployment on Render (Recommended)
-1. Push your repository to GitHub.
-2. Sign in to your [Render Dashboard](https://dashboard.render.com) $\rightarrow$ **New +** $\rightarrow$ **Blueprint**.
-3. Connect your repository. Render will automatically read `render.yaml` and deploy the application.
-
-### Option B: Local Docker Compose Stack
 ```bash
-# Copy template configuration
-cp backend/.env.example backend/.env
-
-# Spin up full production container stack
-docker-compose up --build
+cd backend
+pip install pytest pytest-cov httpx
+pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
 ```
 
-### Option C: Standalone Local Setup
+| Test Category | Tests |
+|---|---|
+| Health & Root | `test_root_endpoint`, `test_health_check_endpoint` |
+| AI Safety & RAG | PII redaction, prompt injection blocking, coordinate grounding, multilingual fallback |
+| OAuth2 Auth | Token issuance, invalid credentials, registration, `/me` profile |
+| RBAC Authorization | Volunteer blocked from organizer endpoints (403) |
+| Assistant & Dijkstra | RAG query, route optimizer with `accessible` preference |
+| Crowd Intelligence | Status listing, density update, predictive forecasting |
+| Transport | Status listing, delay update with AI summary |
+| Sustainability | Nudge API, impact calculator (refills + transit trips) |
+| Match Telemetry | Live score, fixtures list, score update + broadcast |
+| Decision Copilot | Full draft → AI suggestion → RBAC approval → broadcast workflow |
+
+---
+
+## 📡 API Reference
+
+| Category | Method | Endpoint | Auth Required |
+|---|---|---|---|
+| Health | GET | `/` | No |
+| Health | GET | `/health` | No |
+| Auth | POST | `/api/auth/register` | No |
+| Auth | POST | `/api/auth/token` | No |
+| Auth | GET | `/api/auth/me` | Bearer Token |
+| Match | GET | `/api/match/live` | No |
+| Match | GET | `/api/match/fixtures` | No |
+| Match | POST | `/api/match/update` | No |
+| Assistant | POST | `/api/assistant/query` | No |
+| Crowd | GET | `/api/crowd/status` | No |
+| Crowd | POST | `/api/crowd/update` | No |
+| Transport | GET | `/api/transport/status` | No |
+| Transport | POST | `/api/transport/update` | No |
+| Sustainability | GET | `/api/sustainability/nudge` | No |
+| Decision | GET | `/api/decision/list` | No |
+| Decision | POST | `/api/decision/report` | No |
+| Decision | POST | `/api/decision/approve` | `organizer` / `admin` |
+| Metrics | GET | `/metrics` | No |
+| WebSocket | WS | `/ws/updates` | No |
+| Docs | GET | `/docs` | No |
+
+---
+
+## 🛠️ Local Setup
+
 ```bash
-# 1. Backend (FastAPI with SQLite fallback)
+# 1. Clone repository
+git clone https://github.com/salman-momin08/fifa_wc.git
+cd fifa_wc
+
+# 2. Backend setup
 cd backend
 python -m venv venv
-venv\Scripts\activate   # On Windows
+venv\Scripts\activate      # Windows
 pip install -r requirements.txt
+cp .env.example .env       # Add your GEMINI_API_KEY
 uvicorn app.main:app --reload --port 8000
 
-# 2. Frontend (Next.js)
-cd frontend
+# 3. Frontend setup
+cd ../frontend
 npm install
 npm run dev
 ```
+
+Open `http://localhost:3000` for the Fan Portal, `http://localhost:8000/docs` for the interactive Swagger API.
+
+---
+
+## ☁️ Deployment (Render)
+
+```bash
+# 1. Push to GitHub (single main branch)
+git add .
+git commit -m "feat: complete FIFA WC 2026 stadium operations platform"
+git push origin main
+
+# 2. On Render: New → Blueprint → connect repo
+# render.yaml handles build + start commands automatically
+```
+
+---
+
+## 📁 Project Structure
+
+```
+fifa_wc/
+├── backend/
+│   ├── app/
+│   │   ├── api/            # Thin route handlers (auth, assistant, crowd, etc.)
+│   │   ├── core/           # Config, constants, logging, security, exceptions
+│   │   ├── repositories/   # Database access layer (StadiumRepository)
+│   │   ├── schemas/        # Pydantic validation models (request + response)
+│   │   ├── services/       # Business logic (AI safety, analytics, LLM, routing)
+│   │   ├── database.py     # SQLAlchemy ORM models + DB initialization
+│   │   ├── main.py         # FastAPI app, middleware, routers
+│   │   ├── tasks.py        # Celery async background tasks
+│   │   └── worker.py       # Celery worker entry point
+│   ├── tests/
+│   │   ├── conftest.py     # Shared pytest fixtures + isolated test DB
+│   │   └── test_main.py    # 25+ comprehensive test cases
+│   ├── pyproject.toml      # Black, Ruff, MyPy, isort config
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile
+├── frontend/
+│   ├── components/         # React components (FanPortal, Header, AIAssistant, etc.)
+│   ├── pages/              # Next.js pages
+│   └── public/             # Static assets + service worker
+├── SECURITY.md             # Security policies and vulnerability reporting
+├── ACCESSIBILITY.md        # WCAG 2.2 AA compliance documentation
+├── ARCHITECTURE.md         # Detailed system architecture decisions
+├── DEPLOYMENT.md           # Render + Docker deployment guide
+└── README.md               # This file
+```
+
+---
+
+## 💡 Assumptions
+
+1. **Precinct Coordinate Grid** — Waypoint nodes in `wayfinding_nodes` map to physical stadium gate and concourse coordinates; coordinates are seeded at DB init and verified before AI grounding.
+2. **Network Resilience** — Under stadium cellular congestion, the system degrades to local rule-based SOP fallbacks and PWA offline cache (`sw.js`).
+3. **Role Assignment** — Fan accounts are publicly self-serviceable; `volunteer`/`organizer` roles are assigned by administrators at accreditation time.
+4. **Match Data** — Live match telemetry is simulated via `MatchSimulator` using system-clock seeds; production integration with official FIFA Data APIs follows the same interface contract.
+5. **Language Detection** — Language is fan-selected (not auto-detected) to ensure deliberate accessibility choices.

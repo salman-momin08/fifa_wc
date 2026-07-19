@@ -1,11 +1,42 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { queryAssistantAPI } from '../../lib/api';
 import styles from './AIAssistant.module.css';
 
+/**
+ * Text-to-Speech hook using the Web Speech API.
+ * Falls back gracefully when speechSynthesis is not available.
+ * @param {string} lang - BCP-47 language code (e.g., 'en', 'es')
+ * @returns {{ speak: function(string): void, isSpeaking: boolean, isSupported: boolean }}
+ */
+function useTTS(lang) {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const utteranceRef = useRef(null);
+  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  const speak = useCallback((text) => {
+    if (!isSupported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === 'ar' ? 'ar-SA' : lang === 'es' ? 'es-ES' : lang === 'fr' ? 'fr-FR' : lang === 'pt' ? 'pt-BR' : 'en-US';
+    utterance.rate = 0.9;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, [lang, isSupported]);
+
+  // Cancel speech on unmount
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  return { speak, isSpeaking, isSupported };
+}
+
 export default function AIAssistant({ offlineMode, handleSelectMouseDown, handleSelectChange }) {
   const [fanLang, setFanLang] = useState('en');
+  const { speak, isSpeaking, isSupported: ttsSupported } = useTTS(fanLang);
   const [queryInput, setQueryInput] = useState('');
   const [sessions, setSessions] = useState([
     {
@@ -600,7 +631,42 @@ export default function AIAssistant({ offlineMode, handleSelectMouseDown, handle
                 </div>
                 {ch.sender === 'bot' && idx === chatHistory.length - 1 && (
                   <div className={styles.bubbleActions} style={{display: 'flex', alignItems: 'center', gap: '1.0rem', marginTop: '0.75rem', paddingBottom: '1.25rem'}}>
-                    
+
+                    {/* TTS Voice Read Aloud Button — Web Speech API */}
+                    {ttsSupported && (
+                      <div style={{position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center'}}>
+                        <button
+                          className={styles.actionBtn}
+                          title={isSpeaking ? 'Stop reading' : 'Read aloud (Voice Navigation)'}
+                          aria-label={isSpeaking ? 'Stop voice narration' : 'Read response aloud'}
+                          onClick={() => {
+                            if (isSpeaking) {
+                              window.speechSynthesis.cancel();
+                            } else {
+                              speak(ch.text);
+                            }
+                          }}
+                          style={{display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', color: isSpeaking ? 'var(--color-primary)' : undefined}}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={isSpeaking ? 'var(--color-primary)' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            {isSpeaking ? (
+                              <line x1="23" y1="9" x2="23" y2="15" />
+                            ) : (
+                              <>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                              </>
+                            )}
+                          </svg>
+                        </button>
+                        <span style={{fontSize: '0.6rem', color: 'var(--color-text-muted)', marginTop: '0.15rem', whiteSpace: 'nowrap'}}>
+                          {isSpeaking ? 'Stop' : 'Listen'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Copy Button */}
                     <div style={{position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center'}}>
                       <button 
                         className={styles.actionBtn} 

@@ -56,9 +56,20 @@ REQUEST_LATENCY = Histogram(
     ["method", "endpoint"]
 )
 
+from contextlib import asynccontextmanager
+from app.core.constants import RATE_LIMIT_WINDOW_SECONDS, RATE_LIMIT_MAX_REQUESTS
+
+# ─── Lifespan Context Manager ────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    """Lifespan event handler for startup and shutdown lifecycle management."""
+    init_db()
+    logger.info("FIFA WC 2026 Operations DB initialized successfully.")
+    yield
+
 # ─── Rate Limiter (Redis-backed if available, in-memory fallback) ─────────────
-RATE_LIMIT_WINDOW = 60
-RATE_LIMIT_MAX_REQUESTS = 60
+RATE_LIMIT_WINDOW = RATE_LIMIT_WINDOW_SECONDS
+RATE_LIMIT_MAX_REQUESTS = RATE_LIMIT_MAX_REQUESTS
 
 try:
     import redis as redis_lib
@@ -101,7 +112,8 @@ app = FastAPI(
     description="GenAI-Enabled Venues Operations and Safety Coordination API Services.",
     version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # ─── Security Headers Middleware ──────────────────────────────────────────────
@@ -180,12 +192,6 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
-
-# ─── Startup DB Init ──────────────────────────────────────────────────────────
-@app.on_event("startup")
-def on_startup():
-    init_db()
-
 # ─── API Routers ──────────────────────────────────────────────────────────────
 app.include_router(auth_router,         prefix="/api/auth",           tags=["Auth"])
 app.include_router(assistant_router,    prefix="/api/assistant",      tags=["Assistant"])
@@ -197,7 +203,8 @@ app.include_router(match_router,        prefix="/api/match",          tags=["Mat
 app.include_router(ws_router,           prefix="/ws",                 tags=["WebSocket"])
 
 @app.get("/")
-def read_root():
+def read_root() -> dict[str, str]:
+    """Return platform API root status."""
     return {
         "status": "online",
         "system": "FIFA WC 2026 Stadium Operations Core",
@@ -206,5 +213,6 @@ def read_root():
     }
 
 @app.get("/health")
-def health_check():
+def health_check() -> dict[str, str]:
+    """Return detailed platform component health status."""
     return {"status": "healthy", "redis": "connected" if _redis_client else "in-memory fallback"}
