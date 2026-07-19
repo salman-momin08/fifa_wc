@@ -1,7 +1,8 @@
-# Render Blueprint Infrastructure Specification (100% Free Tier)
+# Render Blueprint Infrastructure Specification (100% Free Tier Compatible)
 # FIFA World Cup 2026 Stadium Operations & Fan Portal (v2.0)
 #
-# Configured specifically for Render's 100% FREE plan (no payment card required).
+# Removes database section to bypass Render's "1 active free database per account" limit.
+# The backend automatically initializes and seeds its database on startup.
 
 services:
   # ── Backend Service (FastAPI Core) ──────────────────────────────────────────
@@ -13,10 +14,6 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: fifa-wc-postgres
-          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_ALGORITHM
@@ -39,10 +36,3 @@ services:
         value: https://fifa-wc-backend.onrender.com/api
       - key: NEXT_PUBLIC_WS_URL
         value: wss://fifa-wc-backend.onrender.com/ws/updates
-
-# ── Managed Free PostgreSQL Database ─────────────────────────────────────────
-databases:
-  - name: fifa-wc-postgres
-    databaseName: stadium_ops
-    user: admin
-    plan: free
