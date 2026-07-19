@@ -15,6 +15,13 @@ import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
+from app.core.config import settings
+from app.core.logging import logger
+from app.core.exceptions import (
+    global_exception_handler,
+    sqlalchemy_exception_handler,
+    validation_exception_handler
+)
 from app.database import init_db
 from app.api.auth import router as auth_router
 from app.api.assistant import router as assistant_router
@@ -24,16 +31,18 @@ from app.api.sustainability import router as sustainability_router
 from app.api.decision import router as decision_router
 from app.api.match import router as match_router
 from app.api.ws import router as ws_router
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi.exceptions import RequestValidationError
 
 # ─── Sentry Error Tracking ───────────────────────────────────────────────────
-SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
-if SENTRY_DSN:
+if settings.SENTRY_DSN:
     sentry_sdk.init(
-        dsn=SENTRY_DSN,
+        dsn=settings.SENTRY_DSN,
         integrations=[StarletteIntegration(), FastApiIntegration()],
         traces_sample_rate=0.2,
-        send_default_pii=False,  # Ensures PII is NOT sent to Sentry
+        send_default_pii=False,
     )
+
 
 # ─── Prometheus Metrics ───────────────────────────────────────────────────────
 REQUEST_COUNT = Counter(
@@ -166,14 +175,11 @@ app.add_middleware(
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
-# ─── Global Error Handler ─────────────────────────────────────────────────────
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    print(f"Unhandled System Error on {request.url.path}: {type(exc).__name__}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "An internal system error occurred. Stadium Operations team has been notified."}
-    )
+# ─── Global Exception Handlers ───────────────────────────────────────────────
+app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
 
 # ─── Startup DB Init ──────────────────────────────────────────────────────────
 @app.on_event("startup")
