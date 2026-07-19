@@ -1,12 +1,12 @@
 """
 Centralized Application Configuration.
-Loads environment variables with Pydantic settings validation.
+Loads environment variables safely using standard environment inspection.
 """
 import os
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from dataclasses import dataclass
 
-class Settings(BaseSettings):
+@dataclass
+class Settings:
     PROJECT_NAME: str = "FIFA World Cup 2026 Stadium Operations Core"
     VERSION: str = "2.0.0"
     API_PREFIX: str = "/api"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
     # Database & Redis
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'stadium_ops.db'))}")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # JWT Authentication
@@ -32,8 +32,5 @@ class Settings(BaseSettings):
     # Security & Monitoring
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
-
-    class Config:
-        case_sensitive = True
 
 settings = Settings()
