@@ -40,9 +40,34 @@ export default function AIAssistant({ offlineMode, handleSelectMouseDown, handle
     }
   ]);
   const [activeSessionId, setActiveSessionId] = useState('session-1');
-
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
   const chatHistory = activeSession.history;
+
+  // Load chat sessions from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('fifa_ai_sessions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSessions(parsed);
+          setActiveSessionId(parsed[0].id);
+        }
+      }
+    } catch {
+      // Fallback to default state
+    }
+  }, []);
+
+  // Persist chat sessions to localStorage on update
+  useEffect(() => {
+    try {
+      localStorage.setItem('fifa_ai_sessions', JSON.stringify(sessions));
+    } catch {
+      // Ignore quota errors
+    }
+  }, [sessions]);
+
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const chatEndRef = useRef(null);
 
